@@ -19,6 +19,7 @@
 #include "outportInit.hpp"
 #include "cli2.hpp"
 // #include "UDPMavlink.hpp"
+#include "serialMavlink.hpp"
 #include "navigator.hpp"
 #include "prognostic.hpp"
 // #include "massStorage.hpp"
@@ -36,6 +37,7 @@ const char* outportInit_thread_name = "outportInit";
 const char* cli_thread_name = "cli";
 // const char* UDPMavlink_thread_name = "UDPMavlink";
 // const char* UDP_PIL_thread_name = "UDPPIL";
+const char* SerialMavlink_thread_name = "SerialMavlink";
 const char* Navi_thread_name = "Navigator";
 const char* prognostic_thread_name = "Prognostic";
 const char* sdcard_thread_name = "SDStorage";
@@ -59,6 +61,7 @@ Thread SensorInit(osPriorityNormal,8092,nullptr,sensInit_thread_name);
 Thread OutputPortInit(osPriorityNormal,16184,nullptr,outportInit_thread_name);
 Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
 // Thread UDPMavlinkComm(osPriorityNormal,16184,nullptr,UDPMavlink_thread_name);
+Thread SerialMavlinkComm(osPriorityNormal,16184,nullptr,SerialMavlink_thread_name);
 Thread Navigator(osPriorityNormal,16184,nullptr,Navi_thread_name);
 Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
 // Thread SDStorage(osPriorityNormal,8092,nullptr,sdcard_thread_name); 
@@ -125,12 +128,13 @@ int main()
   // printf("Mass storage initialized\n");
   ControllerInit.start(cntrInit);
   printf("%s thread started\n", cntrInit_thread_name);
-  SensorInit.start(sensInit);
+  // SensorInit.start(sensInit);
   // OutputPortInit.start(outportInit);
   // UDPMavlinkComm.start(UDPMavlink);
+  SerialMavlinkComm.start(callback(SerialMavlink, serial));
   // Navigator.start(navigator);
   //Prognostic.start(prognostic);
-  CommandLineInterface.start(callback(cli2,serial));
+  // CommandLineInterface.start(callback(cli2,serial));
   // printf("Command line available\n");
   
   ControllerInit.join();

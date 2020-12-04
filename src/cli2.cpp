@@ -35,6 +35,7 @@ __command cmd_enum, command;
 
 void cli2(Serial *serial)
 {
+    // TODO eliminare getc che incasina la lettura mavlink seriale
     serial->getc();
     // serial->read(buff, sizeof(buff));
     printf("\033[2J\033[1;1H");
