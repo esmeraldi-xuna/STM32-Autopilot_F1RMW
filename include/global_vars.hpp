@@ -9,8 +9,8 @@
 #include "common/mavlink.h"
 #include "PI_contr.h"
 #include "Servo.h"
-#include "EthernetInterface.h"
-#include "FXOS8700CQ.h"
+// #include "EthernetInterface.h"
+// #include "MPU9250.h"
 
 #ifndef UDP_BUFFER
 #define UDP_BUFFER
@@ -48,12 +48,12 @@ extern bool flagMavlink;
 
 #endif
 
-#ifndef SERVO_1
-#define SERVO_1
+// #ifndef SERVO_1
+// #define SERVO_1
 
-extern Servo servo1;
+// extern Servo servo1;
 
-#endif
+// #endif
 
 // #ifndef QUEUE_IO IT DOESN'T WORK!!!
 // #define QUEUE_IO  
@@ -63,20 +63,20 @@ extern Servo servo1;
 // #endif
 
 
-#ifndef ETH_COMM
-#define ETH_COMM
+// #ifndef ETH_COMM
+// #define ETH_COMM
 
-extern EthernetInterface eth;
-extern UDPSocket socket;
+// extern EthernetInterface eth;
+// extern UDPSocket socket;
 
-#endif
+// #endif
 
-#ifndef ACCMAG_VALUES
-#define ACCMAG_VALUES
+// #ifndef ACCMAG_VALUES
+// #define ACCMAG_VALUES
 
-extern Data accmagValues;
+// extern Data accmagValues;
 
-#endif
+// #endif
 
 #ifndef LED_MUTEX
 #define LED_MUTEX

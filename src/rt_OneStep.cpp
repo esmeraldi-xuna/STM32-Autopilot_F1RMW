@@ -47,7 +47,7 @@ uint32_t wdgTime;
 
 Timer timer;
 
-TankMotor leftMotor(PTC10,PTB23,PTA2), rightMotor(PTC11,PTB9,PTA1);
+// TankMotor leftMotor(PTC10,PTB23,PTA2), rightMotor(PTC11,PTB9,PTA1);
 /*
  * Associating rt_OneStep with a real-time clock or interrupt service routine
  * is what makes the generated code "real-time".  The function rt_OneStep is
@@ -123,10 +123,10 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     #endif
     // semContrPWM.release();
 
-    leftMotor.Move(PI_contr_Y.pwm_left);
-    rightMotor.Move(PI_contr_Y.pwm_right);
-    printf("\033[12;1H");
-    printf("pwm: %f, %f\n", PI_contr_Y.pwm_left, PI_contr_Y.pwm_right);
+    // leftMotor.Move(PI_contr_Y.pwm_left);
+    // rightMotor.Move(PI_contr_Y.pwm_right);
+    // printf("\033[12;1H");
+    // printf("pwm: %f, %f\n", PI_contr_Y.pwm_left, PI_contr_Y.pwm_right);
 
     /* Indicate task complete */
     // OverrunFlag = false;
