@@ -4,7 +4,7 @@
     Creates a timer that calls an interrupt with the given frequency
 */
 
-//TODO Check mag initialization 
+//TODO Check mag bias and calibration!!!! (line 115)
 
 #include <mbed.h>
 #include "MPU9250.h"
@@ -15,7 +15,7 @@
 #include "EventQueue.h"
 #include "Event.h"
 #include "math.h"
-#include "magCalibrate.hpp"
+// #include "magCalibrate.hpp"
 #include <ThisThread.h>
 #include <Thread.h>
 #include <rtos.h>
@@ -29,10 +29,10 @@
 // using namespace mbed;
 
 MPU9250 imu(PA_10,PA_9);
-CalibrateMagneto magCal;
+// CalibrateMagneto magCal;
 // DigitalOut calib_led(LED_GREEN,1), controllerLedSensorThread(LED_BLUE,1);
 
-FILE *f_calib;
+// FILE *f_calib;
 
 float roll,pitch,mag_norm;
 float magValues[3], magValues_filt[3], minExtremes[3], maxExtremes[3], minMag[3], maxMag[3];
@@ -112,6 +112,7 @@ void sensInit()
             
         // }
         imu.initAK8963(imu.magCalibration);
+        imu.magbias[0] = +470.; imu.magbias[1] = +120.; imu.magbias[2] = +125.;
     }
     else
     {
@@ -156,9 +157,9 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
     // accmagValues.mx = accmagValues.mx/mag_norm;
     // accmagValues.my = accmagValues.my/mag_norm;
     // accmagValues.mz = accmagValues.mz/mag_norm;
-    // pitch = atan2(accmagValues.ax,sqrt(accmagValues.ay*accmagValues.ay + accmagValues.az*accmagValues.az));
-    // roll = atan2(-accmagValues.ay,sqrt(accmagValues.ax*accmagValues.ax + accmagValues.az*accmagValues.az));
-    // feedback_control_U.psi_est = atan2(-accmagValues.my*cos(roll) - accmagValues.mz*sin(roll),accmagValues.mx*cos(pitch) \
+    // pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
+    // roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
+    // // feedback_control_U.psi_est = atan2(-accmagValues.my*cos(roll) - accmagValues.mz*sin(roll),accmagValues.mx*cos(pitch) \
     //                             + accmagValues.my*sin(pitch)*sin(roll) - accmagValues.mz*sin(pitch)*cos(roll))*180/3.14;
     // PI_contr_U.psi_odom = atan2(magValues_filt[1],magValues_filt[0])*180/3.14;
     // printf("yaw: %f\n",feedback_control_U.psi_est);
@@ -172,6 +173,7 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
 
     if(imu.readByte(MPU9250_ADDRESS,INT_STATUS & 0x01))     // if there are new data
     {
+        // imu.deltat=timerSesnInt.read();
         imu.readAccelData(imu.accelCount);
         imu.ax = ((float)imu.accelCount[0])*imu.aRes - imu.accelBias[0];
         imu.ay = (float)imu.accelCount[1]*imu.aRes - imu.accelBias[1];
@@ -187,11 +189,15 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
         imu.my = (float)imu.magCount[1]*imu.magCalibration[1]*imu.mRes - imu.magbias[1];
         imu.mz = (float)imu.magCount[2]*imu.magCalibration[2]*imu.mRes - imu.magbias[2];
 
-        imu.MadgwickQuaternionUpdate(imu.ax,imu.ay,imu.az,imu.gx*PI/180.0f,imu.gy*PI/180.0f,imu.gz*PI/180.0f,imu.mx,imu.my,imu.mz);
-        imu.quat2eul();
- 
-        // Set imu.timestep
-        imu.deltat = timerSesnInt.read(); 
+        // imu.MadgwickQuaternionUpdate(imu.ax,imu.ay,imu.az,imu.gx*PI/180.0f,imu.gy*PI/180.0f,imu.gz*PI/180.0f,imu.mx,imu.my,imu.mz);
+        // imu.quat2eul();
+
+        imu.pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
+        imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
+        imu.yaw = 
+
+        // Print data
+        printf("roll: %.2f\tpitch: %.2f\t\n",imu.roll,imu.pitch);
     }
 
     // irq.rise(calib_irq_handle);

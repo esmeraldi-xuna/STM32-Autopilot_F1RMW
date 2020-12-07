@@ -475,6 +475,7 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
 // but is much less computationally intensive---it can be performed on a 3.3 V Pro Mini operating at 8 MHz!
         void MPU9250::MadgwickQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
         {
+            printf("HERE\n");
             float GyroMeasError = PI * (60.0f / 180.0f);     // gyroscope measurement error in rads/s (start at 60 deg/s), then reduce after ~10 s to 3
             float beta = sqrt(3.0f / 4.0f) * GyroMeasError;  // compute beta
             float GyroMeasDrift = PI * (1.0f / 180.0f);      // gyroscope measurement drift in rad/s/s (start at 0.0 deg/s/s)
@@ -529,6 +530,8 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
             mx *= norm;
             my *= norm;
             mz *= norm;
+
+            printf("%.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f \n",ax,ay,az,gx,gy,gz,mx,my,mz);
  
             // Reference direction of Earth's magnetic field
             _2q1mx = 2.0f * q1 * mx;
@@ -561,16 +564,21 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
             qDot4 = 0.5f * (q1 * gz + q2 * gy - q3 * gx)- beta * s4;
  
             // Integrate to yield quaternion
+            printf("%f",deltat);
             q1 += qDot1 * deltat;
             q2 += qDot2 * deltat;
             q3 += qDot3 * deltat;
             q4 += qDot4 * deltat;
+            printf("new: %.2f %.2f %.2f %.2f \n",q1,q2,q3,q4);
             norm = sqrt(q1 * q1 + q2 * q2 + q3 * q3 + q4 * q4);    // normalise quaternion
             norm = 1.0f/norm;
             q[0] = q1 * norm;
             q[1] = q2 * norm;
             q[2] = q3 * norm;
             q[3] = q4 * norm;
+            printf("norm: %2.f, qdots: %.2f %.2f %.2f %.2f \n",norm,qDot1,qDot2,qDot3,qDot4);
+            // printf("%.2f %.2f %.2f %.2f \n",q[0],q[1],q[2],q[3]);
+            printf("%.2f %.2f %.2f %.2f \n",q1,q2,q3,q4);
         }    
         // yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
         // pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
@@ -587,10 +595,10 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
         void MPU9250::MahonyQuaternionUpdate(float ax, float ay, float az, float gx, float gy, float gz, float mx, float my, float mz)
         {
             float eInt[3] = {0.0f, 0.0f, 0.0f};              // vector to hold integral error for Mahony method
-            q[0] = 1.0f;
-            q[1] = 0.0f;
-            q[2] = 0.0f;
-            q[3] = 0.0f;
+            // q[0] = 1.0f;
+            // q[1] = 0.0f;
+            // q[2] = 0.0f;
+            // q[3] = 0.0f;
             float q1 = q[0], q2 = q[1], q3 = q[2], q4 = q[3];   // short name local variable for readability
             float norm;
             float hx, hy, bx, bz;
@@ -678,6 +686,8 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
             q[1] = q2 * norm;
             q[2] = q3 * norm;
             q[3] = q4 * norm;
+
+            //printf("%.2f %.2f %.2f %.2f \n",q[0],q[1],q[2],q[3]);
  
         }
 
@@ -686,8 +696,8 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
         yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
         pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
         roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-        // pitch *= 180.0f / PI;
-        // yaw   *= 180.0f / PI; 
-        // // yaw   -= 2.62f; // Declination at Torino, Italy is 2 degrees 37 minutes 2020-08-27
-        // roll  *= 180.0f / PI;
+        pitch *= 180.0f / PI;
+        yaw   *= 180.0f / PI; 
+        // yaw   -= 2.62f; // Declination at Torino, Italy is 2 degrees 37 minutes 2020-08-27
+        roll  *= 180.0f / PI;
     }
