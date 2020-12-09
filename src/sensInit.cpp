@@ -33,7 +33,16 @@
 MPU9250 imu(PA_10,PA_9);
 
 // Create baro object
-BMP085 barometer(PA_10,PA_9);
+BMP085 barometer(PA_10, PA_9, BMP085::BMP085_ADDRESS, 400000);
+BMP085::Vector_cal_coeff_t Coeff; 
+BMP085::Vector_temp_f UT; 
+BMP085::Vector_pressure_f UP; 
+BMP085::Vector_compensated_data_f TrueData;
+BMP085::Vector_cal_coeff_t *myCalCoeff = &Coeff; 
+BMP085::Vector_temp_f *myUT = &UT; 
+BMP085::Vector_pressure_f *myUP = &UP; 
+BMP085::Vector_compensated_data_f *myTrueData = &TrueData;
+
 
 // CalibrateMagneto magCal;
 // DigitalOut calib_led(LED_GREEN,1), controllerLedSensorThread(LED_BLUE,1);
@@ -76,7 +85,6 @@ void sensInit()
         imu.initMPU9250();        
         imu.getAres(); // Get accelerometer sensitivity
         imu.getGres(); // Get gyro sensitivity
-        imu.getMres(); // Get mag sensitivity
 
         // Initialize quaternion and step time
         imu.q[0] = 1; imu.q[1] = 0; imu.q[2] = 0; imu.q[3] = 0; imu.deltat = 0.01;
@@ -119,6 +127,7 @@ void sensInit()
             
         // }
         imu.initAK8963(imu.magCalibration);
+        imu.getMres(); // Get mag sensitivity
         imu.magbias[0] = +470.; imu.magbias[1] = +120.; imu.magbias[2] = +125.;
     }
     else
@@ -129,7 +138,7 @@ void sensInit()
     printf("\033[2J");
 
     // Barometer initialization
-
+    barometer.BMP085_GetCalibrationCoefficients(&Coeff);
 
     // Launch event if MPU9250 and AK8963 are ok
     if (flag)
@@ -204,15 +213,24 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
 
         imu.pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
         imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
-        // imu.yaw = 
+        imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) \
+                                + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
 
-        barometer.update();
-        pressure = barometer.get_pressure();
-        temperature = barometer.get_temperature();
-        printf("Pressure: %.2f [hPa] -  Temperature: %.2f [C] - Altitude %.2f [m]\n", pressure, temperature);
+        // barometer.BMP085_TriggerTemperature(); 
+        // barometer.BMP085_ReadRawTemperature(myUT);        
+        // barometer.BMP085_TriggerPressure(BMP085::PRESSURE_STANDARD_MODE );
+        // barometer.BMP085_ReadRawPressure(myUP);
+        // TrueData = barometer.BMP085_CalculateCompensated_Temperature_Pressure(Coeff,UT, UP,BMP085::PRESSURE_STANDARD_MODE);
+        // printf("Pressure: %ld - Temperature: %.1f\n",TrueData.Pressure, ( float )TrueData.Temperature/10);
 
         // Print data
-        // printf("roll: %.2f\tpitch: %.2f\t\n",imu.roll*180./PI,imu.pitch*180./PI);
+        // printf("")
+        printf("roll: %.2f \t pitch: %.2f \t yaw: %.2f \t \n",imu.roll*180./PI,imu.pitch*180./PI, imu.yaw*180/PI);
+        printf("magCount: %e \t%e\t%e\t\n",imu.magCount[0],imu.magCount[1],imu.magCount[2]); 
+        printf("magCalibration: %f\t%f\t%f\t\n",imu.magCalibration[0],imu.magCalibration[1],imu.magCalibration[2]); 
+        // printf("mres: %f\n",imu.mRes); 
+
+        printf("%f\t%f\t%f\t\n",imu.mx,imu.my,imu.mz);
     }
 
     // irq.rise(calib_irq_handle);

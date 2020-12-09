@@ -1,170 +1,364 @@
 	
 
-/*
- * mbed library to use a Bosch Sensortec BMP085/BMP180 sensor
- * Copyright (c) 2010 Hiroshi Suga
- * Released under the MIT License: http://mbed.org/license/mit
+/**
+ * @brief       BMP085.c
+ * @details     Digital pressure sensor.
+ *              Functions file.
+ *
+ *
+ * @return      NA
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017    The ORIGIN
+ * @pre         NaN.
+ * @warning     NaN
+ * @pre         This code belongs to AqueronteBlog ( http://unbarquero.blogspot.com ).
  */
  
-/** @file BMP085.cpp
- * @brief mbed library to use a Bosch Sensortec BMP085/BMP180 sensor
- * barometric pressure sensor BMP085/BMP180 (Bosch Sensortec)
- * interface: I2C digital
- */
+ #include "BMP085.h"
  
-#include "mbed.h"
-#include "BMP085.h"
  
-#define WEATHER_BMP085 0xee
-#define xpow(x, y) ((long)1 << y)
+BMP085::BMP085 ( PinName sda, PinName scl, uint32_t addr, uint32_t freq )
+        : i2c          ( sda, scl )
+        , BMP085_Addr  ( addr )
+{
+    i2c.frequency( freq );
+}
+ 
+ 
+BMP085::~BMP085(){
+}
+ 
+ 
  
 /**
- * @brief Initializes interface (private I2C)
- * @param p_sda port of I2C SDA
- * @param p_scl port of I2C SCL
- * @param p_oss parameter of OSS
+ * @brief       BMP085_GetCalibrationCoefficients   ( Vector_cal_coeff_t* )
+ *
+ * @details     It gets the calibration coefficients.
+ *
+ * @param[in]    NaN
+ *
+ * @param[out]   Vector_cal_coeff_t:    Calibration coefficients.
+ *
+ *
+ * @return       Status of BMP085_GetCalibrationCoefficients.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         NaN
+ * @warning     NaN.
  */
-BMP085::BMP085 (PinName p_sda, PinName p_scl, BMP085_oss p_oss) : i2c(p_sda, p_scl) {
-    init(p_oss);
+BMP085::BMP085_status_t  BMP085::BMP085_GetCalibrationCoefficients  ( Vector_cal_coeff_t* myCalCoeff )
+{
+    char        cmd[22]             =   { 0 };
+    uint32_t    aux                 =    0;
+ 
+    cmd[0]   =   BMP085_AC1_MSB;
+    
+    
+    aux = i2c.write ( BMP085_Addr, &cmd[0], 1 );
+    aux = i2c.read  ( BMP085_Addr, &cmd[0], 22 );
+ 
+    // Parse the data
+    myCalCoeff->AC1  =   ( cmd[0]  << 8 ) | cmd[1];
+    myCalCoeff->AC2  =   ( cmd[2]  << 8 ) | cmd[3];
+    myCalCoeff->AC3  =   ( cmd[4]  << 8 ) | cmd[5];
+    myCalCoeff->AC4  =   ( cmd[6]  << 8 ) | cmd[7];
+    myCalCoeff->AC5  =   ( cmd[8]  << 8 ) | cmd[9];
+    myCalCoeff->AC6  =   ( cmd[10] << 8 ) | cmd[11];
+    myCalCoeff->B1   =   ( cmd[12] << 8 ) | cmd[13];
+    myCalCoeff->B2   =   ( cmd[14] << 8 ) | cmd[15];
+    myCalCoeff->MB   =   ( cmd[16] << 8 ) | cmd[17];
+    myCalCoeff->MC   =   ( cmd[18] << 8 ) | cmd[19];
+    myCalCoeff->MD   =   ( cmd[20] << 8 ) | cmd[21];
+ 
+ 
+ 
+    if ( aux == I2C_SUCCESS )
+       return   BMP085_SUCCESS;
+    else
+       return   BMP085_FAILURE;
 }
+ 
  
 /**
- * @brief Initializes interface (public I2C)
- * @param p_i2c instance of I2C class
- * @param p_oss parameter of OSS
+ * @brief       BMP085_TriggerTemperature   ( void )
+ *
+ * @details     It triggers a new temperature measurement.
+ *
+ * @param[in]    NaN.
+ *
+ * @param[out]   NaN.
+ *
+ *
+ * @return       Status of BMP085_TriggerTemperature.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         NaN
+ * @warning     The user MUST respect the maximum temperature conversion time, in this
+ *              case, that value is 4.5ms.
  */
-BMP085::BMP085 (I2C& p_i2c, BMP085_oss p_oss) : i2c(p_i2c) { 
-    init(p_oss);
+BMP085::BMP085_status_t  BMP085::BMP085_TriggerTemperature  ( void )
+{
+    char        cmd[]             =   { BMP085_CONTROL, BMP085_TRIGGER_TEMPERATURE };
+    uint32_t    aux               =    0;
+ 
+ 
+    aux = i2c.write ( BMP085_Addr, &cmd[0], 2 );
+ 
+ 
+ 
+    if ( aux == I2C_SUCCESS )
+       return   BMP085_SUCCESS;
+    else
+       return   BMP085_FAILURE;
 }
+ 
  
 /**
- * @brief Get temperature
- * @return temperature (`C)
+ * @brief       BMP085_ReadRawTemperature   ( Vector_temp_f* )
+ *
+ * @details     It reads an uncompensated temperature.
+ *
+ * @param[in]    NaN.
+ *
+ * @param[out]   myRawTemperature:      Uncompensated temperature.
+ *
+ *
+ * @return       Status of BMP085_ReadRawTemperature.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         BMP085_TriggerTemperature function MUST be called before calling this one.
+ * @warning     The user MUST respect the maximum temperature conversion time, in this
+ *              case, that value is 4.5ms.
  */
-float BMP085::get_temperature() {
-    return temperature;
+BMP085::BMP085_status_t  BMP085::BMP085_ReadRawTemperature  ( Vector_temp_f* myRawTemperature )
+{
+    char        cmd[]             =   { BMP085_READ_TEMPERATURE, 0 };
+    uint32_t    aux               =    0;
+ 
+ 
+    aux = i2c.write ( BMP085_Addr, &cmd[0], 1 );
+    aux = i2c.read  ( BMP085_Addr, &cmd[0], 2 );
+ 
+ 
+    // Parse the data
+    myRawTemperature->UT_Temperature    =   ( cmd[0] << 8 ) | cmd[1];
+ 
+ 
+ 
+    if ( aux == I2C_SUCCESS )
+       return   BMP085_SUCCESS;
+    else
+       return   BMP085_FAILURE;
 }
+ 
  
 /**
- * @brief Get pressure
- * @return pressure (hPa)
+ * @brief       BMP085_ReadCompensatedTemperature   ( Vector_temp_f*, Vector_cal_coeff_t )
+ *
+ * @details     It reads an compensated/true temperature.
+ *
+ * @param[in]    myCalCoeff:            Calibration coefficients.
+ *
+ * @param[out]   myTrueTemperature:      Compensated/True temperature.
+ *
+ *
+ * @return       Status of BMP085_ReadCompensatedTemperature.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         Both BMP085_TriggerTemperature and BMP085_GetCalibrationCoefficients functions MUST be called before calling this one.
+ * @warning     The user MUST respect the maximum temperature conversion time, in this
+ *              case, that value is 4.5ms.
  */
-float BMP085::get_pressure() {
-    return pressure;
+BMP085::BMP085_status_t  BMP085::BMP085_ReadCompensatedTemperature ( Vector_temp_f* myTrueTemperature, Vector_cal_coeff_t myCalCoeff )
+{
+    uint32_t    aux               =    0;
+    int32_t     X1, X2, B5;
+ 
+    Vector_temp_f myRawTemperature;
+ 
+ 
+    aux = BMP085_ReadRawTemperature ( &myRawTemperature );
+ 
+ 
+    // Parse the data
+    X1   =   ( ( myRawTemperature.UT_Temperature - myCalCoeff.AC6 ) * myCalCoeff.AC5 ) / 32768;
+    X2   =   ( myCalCoeff.MC * 2048 ) / ( X1 + myCalCoeff.MD );
+    B5   =   X1 + X2;
+ 
+    myTrueTemperature->UT_Temperature   =   ( B5 + 8 ) / 16;
+ 
+ 
+    if ( aux == I2C_SUCCESS )
+       return   BMP085_SUCCESS;
+    else
+       return   BMP085_FAILURE;
 }
-
+ 
+ 
+ 
 /**
- * @brief Get temperature
- * @return temperature (`C)
+ * @brief       BMP085_TriggerPressure   ( BMP085_pressure_osrs_t )
+ *
+ * @details     It triggers a new pressure measurement.
+ *
+ * @param[in]    myResolution:          Pressure resolution.
+ *
+ * @param[out]   NaN.
+ *
+ *
+ * @return       Status of BMP085_TriggerPressure.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         NaN
+ * @warning     The user MUST respect the maximum pressure conversion time:
+ *                  Ultra Low Power Mode:   4.5ms.
+ *                  Standard Mode:          7.5ms.
+ *                  High Resolution Mode:   13.5ms.
+ *                  Ultra High Res. Mode:   25.5ms.
  */
-float BMP085::get_altitude() {
-    return altitude;
+BMP085::BMP085_status_t  BMP085::BMP085_TriggerPressure  ( BMP085_pressure_osrs_t myResolution )
+{
+    char        cmd[]             =   { BMP085_CONTROL, BMP085_TRIGGER_PRESSURE };
+    uint32_t    aux               =    0;
+ 
+    // adjust the pressure resolution
+    cmd[1]   |=   ( myResolution << 6 );
+ 
+ 
+    aux = i2c.write ( BMP085_Addr, &cmd[0], 2 );
+ 
+ 
+ 
+    if ( aux == I2C_SUCCESS )
+       return   BMP085_SUCCESS;
+    else
+       return   BMP085_FAILURE;
 }
  
-
+ 
 /**
- * @brief Update results
+ * @brief       BMP085_ReadRawPressure   ( Vector_pressure_f* )
+ *
+ * @details     It reads an uncompensated temperature.
+ *
+ * @param[in]    NaN.
+ *
+ * @param[out]   myRawPressure:         Uncompensated temperature.
+ *
+ *
+ * @return       Status of BMP085_ReadRawPressure.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         BMP085_TriggerPressure function MUST be called before calling this one.
+ * @warning     The user MUST respect the maximum pressure conversion time:
+ *                  Ultra Low Power Mode:   4.5ms.
+ *                  Standard Mode:          7.5ms.
+ *                  High Resolution Mode:   13.5ms.
+ *                  Ultra High Res. Mode:   25.5ms.
  */
-void BMP085::update () {
-    long t, p, ut, up, x1, x2, x3, b3, b5, b6;
-    float t0 = 288.15;
-    float p0 = 1013.25;
-    float k = 0.0065;
-    float h;
-    unsigned long b4, b7;
+BMP085::BMP085_status_t  BMP085::BMP085_ReadRawPressure ( Vector_pressure_f* myRawPressure )
+{
+    char        cmd[]             =   { BMP085_READ_PRESSURE, 0, 0 };
+    uint32_t    aux               =    0;
  
-    twi_writechar(WEATHER_BMP085, 0xf4, 0x2e);
-    wait(0.01);
-    ut = twi_readshort(WEATHER_BMP085, 0xf6);
  
-    twi_writechar(WEATHER_BMP085, 0xf4, 0x34 | (oss << 6));
-    wait(0.05);
-    up = twi_readlong(WEATHER_BMP085, 0xf6) >> (8 - oss);
+    aux = i2c.write ( BMP085_Addr, &cmd[0], 1 );
+    aux = i2c.read  ( BMP085_Addr, &cmd[0], 3 );
  
-    x1 = (ut - ac6) * ac5 / xpow(2, 15);
-    x2 = (long)mc * xpow(2, 11) / (x1 + md);
-    b5 = x1 + x2;
-    t = (b5 + 8) / xpow(2, 4);
-    temperature = (float)t / 10.0;
  
-    b6 = b5 - 4000;
-    x1 = (b2 * (b6 * b6 / xpow(2, 12))) / xpow(2, 11);
-    x2 = ac2 * b6 / xpow(2, 11);
-    x3 = x1 + x2;
-    b3 = ((((unsigned long)ac1 * 4 + x3) << oss) + 2) / 4;
-    x1 = ac3 * b6 / xpow(2, 13);
-    x2 = (b1 * (b6 * b6 / xpow(2, 12))) / xpow(2, 16);
-    x3 = ((x1 + x2) + 2) / xpow(2, 2);
-    b4 = ac4 * (unsigned long)(x3 + 32768) / xpow(2, 15);
-    b7 = ((unsigned long)up - b3) * (50000 >> oss);
-    if (b7 < (unsigned long)0x80000000) {
-        p = (b7 * 2) / b4;
-    } else {
-        p = (b7 / b4) * 2;
-    }
-    x1 = (p / xpow(2, 8)) * (p / xpow(2, 8));
-    x1 = (x1 * 3038) / xpow(2, 16);
-    x2 = (-7357 * p) / xpow(2, 16);
-    p = p + (x1 + x2 + 3791) / xpow(2, 4);
-    pressure = (float)p / 100.0;
-
-    // altitude computation 
-    h = (-pow(pressure/p0,1./5.255)*t0+t0)/k; 
+    // Parse the data
+    myRawPressure->UP_Pressure    =   ( cmd[0] << 16 ) | ( cmd[1] << 8 ) | cmd[2];
+ 
+ 
+ 
+    if ( aux == I2C_SUCCESS )
+       return   BMP085_SUCCESS;
+    else
+       return   BMP085_FAILURE;
 }
  
-void BMP085::init (BMP085_oss p_oss) {
-    ac1 = twi_readshort(WEATHER_BMP085, 0xaa);
-    ac2 = twi_readshort(WEATHER_BMP085, 0xac);
-    ac3 = twi_readshort(WEATHER_BMP085, 0xae);
-    ac4 = twi_readshort(WEATHER_BMP085, 0xb0);
-    ac5 = twi_readshort(WEATHER_BMP085, 0xb2);
-    ac6 = twi_readshort(WEATHER_BMP085, 0xb4);
-    b1 = twi_readshort(WEATHER_BMP085, 0xb6);
-    b2 = twi_readshort(WEATHER_BMP085, 0xb8);
-    mb = twi_readshort(WEATHER_BMP085, 0xba);
-    mc = twi_readshort(WEATHER_BMP085, 0xbc);
-    md = twi_readshort(WEATHER_BMP085, 0xbe);
-    oss = p_oss;
-}
  
-unsigned short BMP085::twi_readshort (int id, int addr) {
-    unsigned short i;
+/**
+ * @brief       BMP085_CalculateCompensated_Temperature_Pressure   ( Vector_cal_coeff_t , Vector_temp_f , Vector_pressure_f , BMP085_pressure_osrs_t )
+ *
+ * @details     It reads an compensated pressure.
+ *
+ * @param[in]    myCalCoeff:            Calibration coefficients.
+ * @param[in]    myRawTemperature:      Uncompensated temperature data.
+ * @param[in]    myRawPressure:         Uncompensated pressure data.
+ * @param[in]    myResolution:          Pressure resolution.
+ *
+ * @param[out]   NaN.
+ *
+ *
+ * @return       Compensated Temperature and Pressure.
+ *
+ *
+ * @author      Manuel Caballero
+ * @date        25/August/2017
+ * @version     25/August/2017   The ORIGIN
+ * @pre         BMP085_GetCalibrationCoefficients, BMP085_ReadRawPressure and BMP085_ReadRawTemperature MUST be called before using this function.
+ * @warning     NaN
+ */
+BMP085::Vector_compensated_data_f  BMP085::BMP085_CalculateCompensated_Temperature_Pressure ( Vector_cal_coeff_t myCalCoeff, Vector_temp_f myRawTemperature, Vector_pressure_f myRawPressure,
+                                                                                              BMP085_pressure_osrs_t myResolution )
+{
+    int32_t     B6, X1, B5, X2, X3, B3;
+    uint32_t    B4, B7;
  
-    i2c.start();
-    i2c.write(id);
-    i2c.write(addr);
+    Vector_compensated_data_f myTrueData;
  
-    i2c.start();
-    i2c.write(id | 1);
-    i = i2c.read(1) << 8;
-    i |= i2c.read(0);
-    i2c.stop();
+    // Calculate true temperature
+    X1   =   ( ( myRawTemperature.UT_Temperature - myCalCoeff.AC6 ) * myCalCoeff.AC5 ) / 32768;
+    X2   =   ( myCalCoeff.MC * 2048 ) / ( X1 + myCalCoeff.MD );
+    B5   =   X1 + X2;
  
-    return i;
-}
+    myTrueData.Temperature   =   ( B5 + 8 ) / 16;
  
-unsigned long BMP085::twi_readlong (int id, int addr) {
-    unsigned long i;
  
-    i2c.start();
-    i2c.write(id);
-    i2c.write(addr);
+    // Calculate true pressure
+    B6   =   B5 - 4000;
+    X1   =   ( myCalCoeff.B2 * ( B6 * B6 / 4096 ) ) /2048;
+    X2   =   myCalCoeff.AC2 * B6 / 2048;
+    X3   =   X1 + X2;
+    B3   =   ( ( ( myCalCoeff.AC1 * 4 + X3 ) << myResolution ) + 2 ) / 4;
+    X1   =   myCalCoeff.AC3 * B6 / 8192;
+    X2   =   ( myCalCoeff.B1 * ( B6 * B6 / 4096 ) ) / 65536;
+    X3   =   ( ( X1 + X2 ) + 2 ) / 4;
+    B4   =   myCalCoeff.AC4 * ( uint32_t )( X3 + 32768 ) / 32768;
+    B7   =   ( ( uint32_t )myRawPressure.UP_Pressure - B3 ) * ( 50000 >> myResolution );
  
-    i2c.start();
-    i2c.write(id | 1);
-    i = i2c.read(1) << 16;
-    i |= i2c.read(1) << 8;
-    i |= i2c.read(0);
-    i2c.stop();
+    if ( B7 < 0x80000000 )
+        myTrueData.Pressure    =   ( B7 * 2 ) / B4;
+    else
+        myTrueData.Pressure    =   ( B7 / B4 ) * 2;
  
-    return i;
-}
+    X1   =   ( myTrueData.Pressure / 256 ) * ( myTrueData.Pressure / 256 );
+    X1   =   ( X1 * 3038 ) / 65536;
+    X2   =   ( -7357 * myTrueData.Pressure ) / 65536;
  
-void BMP085::twi_writechar (int id, int addr, int dat) {
+    myTrueData.Pressure   =   myTrueData.Pressure + ( X1 + X2 + 3791 ) / 16;
  
-    i2c.start();
-    i2c.write(id);
-    i2c.write(addr);
-    i2c.write(dat);
-    i2c.stop();
+ 
+    return   myTrueData;
 }
