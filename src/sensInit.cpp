@@ -8,6 +8,7 @@
 
 #include <mbed.h>
 #include "MPU9250.h"
+#include "BMP085.h"
 #include "global_vars.hpp"
 // #include "massStorage.hpp"
 
@@ -28,7 +29,12 @@
 // using namespace ThisThread;
 // using namespace mbed;
 
+// Create imu object 
 MPU9250 imu(PA_10,PA_9);
+
+// Create baro object
+BMP085 barometer(PA_10,PA_9);
+
 // CalibrateMagneto magCal;
 // DigitalOut calib_led(LED_GREEN,1), controllerLedSensorThread(LED_BLUE,1);
 
@@ -39,6 +45,7 @@ float magValues[3], magValues_filt[3], minExtremes[3], maxExtremes[3], minMag[3]
 int measurements_count = 0, id_calib;
 char f_buff[100], f_buff_disc[100], temp_char;
 float mag_extremes[6];
+float pressure = 0.0f, temperature = 0.0f;
 
 EventQueue queue;
 // EventQueue SDaccessQueue(8096);
@@ -121,6 +128,9 @@ void sensInit()
     }
     printf("\033[2J");
 
+    // Barometer initialization
+
+
     // Launch event if MPU9250 and AK8963 are ok
     if (flag)
     {
@@ -194,10 +204,15 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
 
         imu.pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
         imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
-        imu.yaw = 
+        // imu.yaw = 
+
+        barometer.update();
+        pressure = barometer.get_pressure();
+        temperature = barometer.get_temperature();
+        printf("Pressure: %.2f [hPa] -  Temperature: %.2f [C] - Altitude %.2f [m]\n", pressure, temperature);
 
         // Print data
-        printf("roll: %.2f\tpitch: %.2f\t\n",imu.roll,imu.pitch);
+        // printf("roll: %.2f\tpitch: %.2f\t\n",imu.roll*180./PI,imu.pitch*180./PI);
     }
 
     // irq.rise(calib_irq_handle);
