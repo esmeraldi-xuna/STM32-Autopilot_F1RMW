@@ -105,8 +105,8 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     PI_contr_U.py_start = setpointsTrajectoryPlanner.afy;
     PI_contr_U.py_odom = odom.y;
     PI_contr_U.px_odom = odom.x;
-    printf("\033[1;1H");
-    printf("vel ref: %f, vel odom: %f, odom x: %f, psi ref: %f\n", PI_contr_U.vel_ref, PI_contr_U.vel_odom, PI_contr_U.px_odom, PI_contr_U.psi_ref);
+    // printf("\033[1;1H");
+    // printf("vel ref: %f, vel odom: %f, odom x: %f, psi ref: %f\n", PI_contr_U.vel_ref, PI_contr_U.vel_odom, PI_contr_U.px_odom, PI_contr_U.psi_ref);
     
     #if PIL_MODE
       semDecode.acquire(); 

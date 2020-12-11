@@ -126,7 +126,7 @@ int main()
   // printf("%s thread started\n", sdcard_thread_name);
   // SDStorage.join();
   // printf("Mass storage initialized\n");
-  ControllerInit.start(cntrInit);
+  // ControllerInit.start(cntrInit);
   printf("%s thread started\n", cntrInit_thread_name);
   // SensorInit.start(sensInit);
   // OutputPortInit.start(outportInit);
@@ -137,7 +137,7 @@ int main()
   // CommandLineInterface.start(callback(cli2,serial));
   // printf("Command line available\n");
   
-  ControllerInit.join();
+  // ControllerInit.join();
   
   
   while(1) {

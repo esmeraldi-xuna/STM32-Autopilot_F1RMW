@@ -292,7 +292,7 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
 //                 line_begin = ftell(f_calib);
 //                 // fflush(stdout);
 //                 printf("done\n");
-//                 fflush(stdout);
+//                 fflush(stdscreen /dev/ttyUSB0 9600out);
 //                 break;
 
 //             }

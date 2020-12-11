@@ -14,6 +14,10 @@ uint8_t COMP_ID = 1;
 
 uint8_t in_data[MAVLINK_MAX_PACKET_LEN];
 
+DigitalOut led_serial(D2,0);
+
+Serial *serial_cli = new Serial(D5, D4, 115200);
+
 void SerialMavlink(Serial *serial)
 {
     // Read from serial
@@ -22,11 +26,14 @@ void SerialMavlink(Serial *serial)
     {
         if (stream->readable())
         {
-            printf("Sto leggendo da seriale...\n");
+            serial_cli->printf("\033[12;1H");
+            serial_cli->printf("Sto leggendo da seriale...\n");
             stream->read(&in_data, MAVLINK_MAX_PACKET_LEN);
 
             for(int ii = 0; ii < MAVLINK_MAX_PACKET_LEN; ii++) 
                 {
+                    // led_serial = -led_serial;
+                    // ThisThread::sleep_for(100);
                     uint8_t byte = in_data[ii];
                     if(mavlink_parse_char(MAVLINK_COMM_0, byte, &msgIn, &status))
                     {
@@ -46,10 +53,12 @@ void SerialMavlink(Serial *serial)
                             break;
 
                         case MAVLINK_MSG_ID_RC_CHANNELS:
+                            
                             mavlink_msg_rc_channels_decode(&msgIn, &rc);
-                            printf("\033[13;1H");
-                            printf("ch1: %d, ch2: %d, ch3: %d, ch4: %d \n", rc.chan1_raw, rc.chan2_raw, \
+                            serial_cli->printf("\033[13;1H");
+                            serial_cli->printf("ch1: %d, ch2: %d, ch3: %d, ch4: %d \n", rc.chan1_raw, rc.chan2_raw, \
                                 rc.chan3_raw, rc.chan4_raw);
+                            break;
                         
                         default:
                             printf("\033[4;1H");
@@ -62,11 +71,12 @@ void SerialMavlink(Serial *serial)
                         // semUDPNav.release();
                         // flagMavlink = true;
                     }
+                    
                 }
         }
         else
         {
-            printf("No mavlink message received...\n");
+            serial_cli->printf("No mavlink message received...\n");
         }
     }
     
