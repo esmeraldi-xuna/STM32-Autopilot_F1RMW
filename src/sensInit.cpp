@@ -8,7 +8,7 @@
 
 #include <mbed.h>
 #include "MPU9250.h"
-#include "BMP085.h"
+#include "SonarMaxBotix.h"
 #include "global_vars.hpp"
 // #include "massStorage.hpp"
 
@@ -32,17 +32,8 @@
 // Create imu object 
 MPU9250 imu(PA_10,PA_9);
 
-// Create baro object
-BMP085 barometer(PA_10, PA_9, BMP085::BMP085_ADDRESS, 400000);
-BMP085::Vector_cal_coeff_t Coeff; 
-BMP085::Vector_temp_f UT; 
-BMP085::Vector_pressure_f UP; 
-BMP085::Vector_compensated_data_f TrueData;
-BMP085::Vector_cal_coeff_t *myCalCoeff = &Coeff; 
-BMP085::Vector_temp_f *myUT = &UT; 
-BMP085::Vector_pressure_f *myUP = &UP; 
-BMP085::Vector_compensated_data_f *myTrueData = &TrueData;
-
+// Create sonar object
+SonarMaxBotix sonar(A0); 
 
 // CalibrateMagneto magCal;
 // DigitalOut calib_led(LED_GREEN,1), controllerLedSensorThread(LED_BLUE,1);
@@ -54,7 +45,7 @@ float magValues[3], magValues_filt[3], minExtremes[3], maxExtremes[3], minMag[3]
 int measurements_count = 0, id_calib;
 char f_buff[100], f_buff_disc[100], temp_char;
 float mag_extremes[6];
-float pressure = 0.0f, temperature = 0.0f;
+float altitude; 
 
 EventQueue queue;
 // EventQueue SDaccessQueue(8096);
@@ -137,9 +128,6 @@ void sensInit()
     }
     printf("\033[2J");
 
-    // Barometer initialization
-    barometer.BMP085_GetCalibrationCoefficients(&Coeff);
-
     // Launch event if MPU9250 and AK8963 are ok
     if (flag)
     {
@@ -216,21 +204,19 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
         imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) \
                                 + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
 
-        // barometer.BMP085_TriggerTemperature(); 
-        // barometer.BMP085_ReadRawTemperature(myUT);        
-        // barometer.BMP085_TriggerPressure(BMP085::PRESSURE_STANDARD_MODE );
-        // barometer.BMP085_ReadRawPressure(myUP);
-        // TrueData = barometer.BMP085_CalculateCompensated_Temperature_Pressure(Coeff,UT, UP,BMP085::PRESSURE_STANDARD_MODE);
-        // printf("Pressure: %ld - Temperature: %.1f\n",TrueData.Pressure, ( float )TrueData.Temperature/10);
-
+        // Read sonar data
+        altitude = sonar.distance_analog(); 
+    
         // Print data
+        
         // printf("")
-        printf("roll: %.2f \t pitch: %.2f \t yaw: %.2f \t \n",imu.roll*180./PI,imu.pitch*180./PI, imu.yaw*180/PI);
-        printf("magCount: %e \t%e\t%e\t\n",imu.magCount[0],imu.magCount[1],imu.magCount[2]); 
-        printf("magCalibration: %f\t%f\t%f\t\n",imu.magCalibration[0],imu.magCalibration[1],imu.magCalibration[2]); 
+        printf("Altitude: %.2f\n",altitude);
+        // printf("roll: %.2f \t pitch: %.2f \t yaw: %.2f \t \n",imu.roll*180./PI,imu.pitch*180./PI, imu.yaw*180/PI);
+        // printf("magCount: %e \t%e\t%e\t\n",imu.magCount[0],imu.magCount[1],imu.magCount[2]); 
+        // printf("magCalibration: %f\t%f\t%f\t\n",imu.magCalibration[0],imu.magCalibration[1],imu.magCalibration[2]); 
         // printf("mres: %f\n",imu.mRes); 
 
-        printf("%f\t%f\t%f\t\n",imu.mx,imu.my,imu.mz);
+        // printf("%f\t%f\t%f\t\n",imu.mx,imu.my,imu.mz);
     }
 
     // irq.rise(calib_irq_handle);
