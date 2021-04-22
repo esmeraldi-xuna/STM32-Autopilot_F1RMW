@@ -4,32 +4,26 @@
     Global variables are chosen upon uORB because yes.
 */
 
+#ifndef GLOBAL_VARS_H
+#define GLOBAL_VARS_H
+
 
 #include <mbed.h>
-#include "common/mavlink.h"
-#include "PI_contr.h"
-#include "Servo.h"
-// #include "EthernetInterface.h"
 // #include "MPU9250.h"
 
-#ifndef UDP_BUFFER
-#define UDP_BUFFER
+
+/////////////////////////////////  synch obj   /////////////////////////////////////
+
+extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
 
 
-// struct __UDPbuff {
-//   uint8_t in_data[MAVLINK_MAX_PACKET_LEN];
-//   bool in_data_full;
-//   uint8_t out_buf[MAVLINK_MAX_PACKET_LEN];
-//   bool out_buf_full;
-// };
+extern Mutex led_lock;
 
 
 
-#endif
+/////////////////////////////////  controller   /////////////////////////////////////
 
-#ifndef CONTROLLER_TASK_IO
-#define CONTROLLER_TASK_IO
-
+#include "PI_contr.h"
 /**
  * The I/O variables of the controller are used as extern since their name is the same if a Simulink project is used. 
  * This allows to keep the Firmware unchanged.
@@ -38,19 +32,31 @@
 extern ExtU_PI_contr_T PI_contr_U;     // External inputs
 extern ExtY_PI_contr_T PI_contr_Y;     // External outputs
 
+
+
+/////////////////////////////////  communication   /////////////////////////////////////
+
+#include "mavlink/common/mavlink.h"
+//extern bool flagMavlink;
+
+extern mavlink_attitude_t att;
+extern mavlink_odometry_t odom;
+extern mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
+
 #endif
 
-#ifndef SEMAPHORES
-#define SEMAPHORES
+/////////////////////////////////  unused   /////////////////////////////////////
 
-extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
-extern bool flagMavlink;
-
-#endif
+// struct __UDPbuff {
+//   uint8_t in_data[MAVLINK_MAX_PACKET_LEN];
+//   bool in_data_full;
+//   uint8_t out_buf[MAVLINK_MAX_PACKET_LEN];
+//   bool out_buf_full;
+// };
 
 // #ifndef SERVO_1
 // #define SERVO_1
-
+// #include "Servo.h"
 // extern Servo servo1;
 
 // #endif
@@ -78,19 +84,7 @@ extern bool flagMavlink;
 
 // #endif
 
-#ifndef LED_MUTEX
-#define LED_MUTEX
 
-extern Mutex led_lock;
-
-#endif
-
-#ifndef TRAJECTORY_PLANNER_SETPOINTS
-#define TRAJECTORY_PLANNER_SETPOINTS
-
-extern mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
-
-#endif
 
 // // Calibration flags are used to notify whether a sensor has undergone the process of calibration successfully
 // #ifndef CALIBRATION_FLAGS

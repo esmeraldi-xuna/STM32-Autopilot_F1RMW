@@ -8,75 +8,76 @@
 
 
 */
-
 #include <mbed.h>
 #include "Servo.h"
 #include "global_vars.hpp"
 #include "TankMotor.hpp"
-
 #include "outportInit.hpp"
 
 
 float pos = 75.0/180;
 float delta_pos = 0.01;
 
-// Servo servo2(PTC3); ///< The PIN enable for PWM is PTC10.
+// pin enabled for servomotor
 // PwmOut servopwm(PTC3);
 
 EventQueue queuePWM;
-Event<void(void)> servowriteEvent(&queuePWM,Servo1Write);
-Event<void(void)> motorwriteEvent(&queuePWM,MotorWrite);
+Event<void(void)> servowriteEvent(&queuePWM,ServoWriteHandler);
+Event<void(void)> motorwriteEvent(&queuePWM,MotorWriteHandler);
 
-Thread ServoWrite(osPriorityNormal,16184,nullptr,"servoWrite");
+// CRITICAL Also in here I have to protect the read of the output of the controller algorithm with a semaphore/mutex !!!
 
-// TankMotor leftMotor(PTC10,PTC16,PTC17), rightMotor(PTC11,PTB9,PTA1);
-
-// CRITICAL Also in here I have to protect the read of the output of the controller algorithm with a mutex!!!
-
-/** Initialization of the servomotor, spawn of the event posting thread and dispatch queue.
- *  The Servo::calibrate() method accepts as first input a value IN SECONDS.
+/** Initialization of the servomotor(calibration)
+ *  set freq for PWM
+ *  define paramsfor events, post them and dispatch queue.
  */
 void outportInit()
 {
-    // servo1.calibrate(0.0005,90); // 0.0005 s from center (1.5ms) to max/min
-    // servo2.calibrate(0.0005,90);
-    // servopwm.pulsewidth_us(1500);
-    ServoWrite.start(postServoEvent);
-    queuePWM.dispatch(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
+    //servo1.calibrate(0.0005,90); // 0.0005 s from center (1.5ms) to max/min. The Servo::calibrate() method accepts as first input a value IN SECONDS.
+    
+    //servopwm.pulsewidth_us(1500);
+    
+    ServoWriteEventSetup();
+    MotorWriteEventSetup();
+
+    queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
 }
 
-/** The period and the initial delay of the PWM write event are set. Then it is posted in the queue.
- */
-void postServoEvent(void)
+// The period and the initial delay of the PWM write event are set. Then it is posted in the queue.
+void ServoWriteEventSetup(void)
 {
-    servowriteEvent.period(500);
-    servowriteEvent.delay(500);
-    servowriteEvent.post();
-
-    // motorwriteEvent.delay(4000);
-    // motorwriteEvent.period(200);
-    // motorwriteEvent.post();
-    // printf("\033[2;60Hpost");
+    servowriteEvent.period(500ms);
+    servowriteEvent.delay(500ms);
+    servowriteEvent.post();    
 }
 
-/** The event is simply a method writing the computed duty cycle to the enabled pin port. The duty cycle is directly dependent on the output of the
+void MotorWriteEventSetup(void)
+{
+    motorwriteEvent.delay(4s);
+    motorwriteEvent.period(200ms);
+    motorwriteEvent.post();
+}
+
+/** The event handler is simply a method writing the computed duty cycle to the enabled pin port. The duty cycle is directly dependent on the output of the
  *  controller thread: note that the extern variable feedback_control_Y is present.
  */
 
-void Servo1Write(void)
+void ServoWriteHandler(void)
 {
     // TODO add semaphore in here!
-    // if (pos <= 75.0/180)
-    // {
-    //     delta_pos = 0.01;
-    // }
-    // else if (pos >= 105.0/180)
-    // {
-    //     delta_pos = -0.01;
-    // }
-    // printf("delta pos = %f  pos = %f\n", delta_pos, pos);
-    // pos = pos + delta_pos;
-    // servopwm.pulsewidth_us(pos*2000);
+    /*if (pos <= 75.0/180)
+    {
+        delta_pos = 0.01;
+    }
+    else if (pos >= 105.0/180)
+    {
+        delta_pos = -0.01;
+    }
+    printf("delta pos = %f  pos = %f\n", delta_pos, pos);
+    pos = pos + delta_pos;
+    servopwm.pulsewidth_us(pos*2000);
+    */
+    
     // servo1.write(pos);
     // servo2.write(pos);
     
@@ -87,7 +88,7 @@ void Servo1Write(void)
     // printf("pos given to pwm port: %f\n",pos);
 }
 
-void MotorWrite(void)
+void MotorWriteHandler(void)
 {
     // printf("\033[2;50Hout1");
     // semContrPWM.acquire();
@@ -98,27 +99,24 @@ void MotorWrite(void)
 
     // leftMotor.Move(7000);
     // rightMotor.Move(7000);
-    // ThisThread::sleep_for(1000);
+    // ThisThread::sleep_for(1s);
 
     // leftMotor.Move(10000);
     // rightMotor.Move(10000);
-    // ThisThread::sleep_for(3000);
+    // ThisThread::sleep_for(3s);
 
     // leftMotor.Move(15000);
     // rightMotor.Move(15000);
-    // ThisThread::sleep_for(3000);
+    // ThisThread::sleep_for(3s);
 
     // leftMotor.Move(10000);
     // rightMotor.Move(-10000);
-    // ThisThread::sleep_for(1000);
+    // ThisThread::sleep_for(1s);
 
     // leftMotor.Move(-10000);
     // rightMotor.Move(-10000);
-    // ThisThread::sleep_for(1000);
+    // ThisThread::sleep_for(1s);
 
     // leftMotor.Move(0);
     // rightMotor.Move(0);
-    
-
-
 }

@@ -16,8 +16,7 @@
 */
 #include <mbed.h>
 #include "cli_appereance.hpp"
-
-#include "threadinfo.hpp"
+#include "cli.hpp"
  
 #if !defined(MBED_THREAD_STATS_ENABLED)
 #error "Stats not enabled"

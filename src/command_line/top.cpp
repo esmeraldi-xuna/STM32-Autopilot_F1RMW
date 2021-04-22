@@ -16,8 +16,7 @@
 */
 #include <mbed.h>
 #include "cli_appereance.hpp"
-
-#include "top.hpp"
+#include "cli.hpp"
 
 #if !defined(MBED_CPU_STATS_ENABLED) || !defined(DEVICE_LPTICKER) || !defined(DEVICE_SLEEP)
 #error [NOT_SUPPORTED] test not supported
@@ -84,7 +83,7 @@ void print_cpu_stats()
     printf(GREEN("||\n"));
 }
 
-int top(Serial *serial)
+int top(BufferedSerial *serial)
 {
     exit_flag = 0;
     tim.reset();
@@ -101,17 +100,17 @@ int top(Serial *serial)
     EventQueue *stats_queue = mbed_event_queue();
     int id;
 
-    id = stats_queue->call_every(SAMPLE_TIME_MS, print_cpu_stats);
+    id = stats_queue->call_every(std::chrono::milliseconds(SAMPLE_TIME_MS), print_cpu_stats);
 
     while(1)
     {
         if (serial->readable())
             {
-                char k = serial->getc();
+                // char k = serial->getc();
                 exit_flag = 1;
                 break;
             }
-        ThisThread::sleep_for(11);
+        ThisThread::sleep_for(11ms);
     }
     stats_queue->cancel(id);
     // thread->terminate();

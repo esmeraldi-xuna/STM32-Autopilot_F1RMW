@@ -22,7 +22,7 @@
 #include <rtos.h>
 
 #define MPU6050_ADDRESS             0x69
-#define MPU9250_FREQ                200         // in milliseconds!
+#define MPU9250_FREQ                200ms         // in milliseconds!
 
 // using namespace events;
 // using namespace rtos;
@@ -132,7 +132,7 @@ void sensInit()
     if (flag)
     {
         SensorRead.start(postSensorEvent);
-        queue.dispatch();
+        queue.dispatch_forever();
     }
     else
     {
@@ -146,7 +146,7 @@ void postSensorEvent(void)
 {
     // Write here the sensor read events to post them into the queue!
     accmagreadEvent.period(MPU9250_FREQ); 
-    accmagreadEvent.delay(200);
+    accmagreadEvent.delay(200ms);
     accmagreadEvent.post();
     // queue.call_every(200,AccMagRead);
 }

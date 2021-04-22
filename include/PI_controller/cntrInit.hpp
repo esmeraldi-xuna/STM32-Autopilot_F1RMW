@@ -11,5 +11,9 @@
 // static DW_feedback_control_T feedback_control_DW;/* Observable states */
 
 // #endif
+#ifndef CTRL_INIT_H
+#define CTRL_INIT_H
 
 void cntrInit(void);
+
+#endif

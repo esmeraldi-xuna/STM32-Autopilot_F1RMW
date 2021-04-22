@@ -29,8 +29,7 @@
 #include "math.h"
 
 #include "global_vars.hpp"
-#include "global_msgs.hpp"
-#include "common/mavlink.h"
+#include "mavlink/common/mavlink.h"
 #include "TankMotor.hpp"
 
 
@@ -40,8 +39,7 @@
 
 
 DigitalOut led(LED3,1);
-
-uint64_t epoch;
+Kernel::Clock::time_point epoch;
 uint32_t wdgTime;
 // float pitch, roll;
 
@@ -69,7 +67,7 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
   timer.start();
   while (1)
   {
-    epoch = Kernel::get_ms_count();
+    epoch = Kernel::Clock::now();
     // timer.reset();
     // static boolean_T OverrunFlag = false;
 
@@ -142,7 +140,7 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     // printf("\033[3;1Hwdg: %lu (timer: %d)",wdgTime,elapsed);
     watchdog.kick();
     
-    ThisThread::sleep_until(epoch+350); // 50ms is the step time!!
+    ThisThread::sleep_until(epoch+350ms); // 50ms is the step time!!
   }
   
 //   /* Disable rt_OneStep() here */

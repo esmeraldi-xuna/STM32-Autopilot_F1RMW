@@ -9,15 +9,12 @@
 
 #define CONTROLLER_STACK_SIZE 8092
 
-#ifndef CONTROLLER_IO // TODO not needed in realta'
-#define CONTROLLER_IO
+
 static RT_MODEL_PI_contr_T PI_contr_M_;
 static RT_MODEL_PI_contr_T *const PI_contr_MPtr = &PI_contr_M_;// Real-time model 
 static DW_PI_contr_T PI_contr_DW;      // Observable states
 
-#endif
-
-DigitalOut initLED(LED1,1);
+mbed::DigitalOut initLED(LED1,1);
 
 const char* Controller_thread_name = "controller";
 
@@ -34,7 +31,7 @@ void cntrInit(void)
     // Initialize model
     PI_contr_initialize(PI_contr_M, &PI_contr_U, &PI_contr_Y);
     
-    ThisThread::sleep_for(2000);
+    ThisThread::sleep_for(2s);
     // Spawn controller task
     Controller.start(callback(rt_OneStep,PI_contr_M));
     

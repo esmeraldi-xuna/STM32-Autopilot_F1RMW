@@ -7,106 +7,75 @@
 */
 
 
+// not edited
 #include <mbed.h>
-#include <Serial.h>
-// #include <EthernetInterface.h>
-
-#include "global_vars.hpp"
-#include "global_msgs.hpp"
-#include "common/mavlink.h"
-#include "cntrInit.hpp"
-#include "sensInit.hpp"
-#include "outportInit.hpp"
-#include "cli2.hpp"
-// #include "UDPMavlink.hpp"
-#include "navigator.hpp"
-#include "prognostic.hpp"
-// #include "massStorage.hpp"
-
+#include <BufferedSerial.h>
 #include "Thread.h"
+#include "mavlink/common/mavlink.h"
+
+// edited
+#include "cli.hpp"
+#include "cntrInit.hpp"
+#include "global_vars.hpp"
+#include "navigator.hpp"
+#include "outportInit.hpp"
+#include "prognostic.hpp"
+#include "sensInit.hpp"
 
 using namespace events;
 using namespace rtos;
 using namespace ThisThread;
 using namespace mbed;
 
-const char* cntrInit_thread_name = "cntrInit";
+
+// defining threads
 const char* sensInit_thread_name = "sensInit";
 const char* outportInit_thread_name = "outportInit";
-const char* cli_thread_name = "cli";
-// const char* UDPMavlink_thread_name = "UDPMavlink";
-// const char* UDP_PIL_thread_name = "UDPPIL";
-const char* Navi_thread_name = "Navigator";
+const char* navi_thread_name = "Navigator";
 const char* prognostic_thread_name = "Prognostic";
-const char* sdcard_thread_name = "SDStorage";
 
-
-Serial* serial = new Serial(USBTX,USBRX,115200);
-// BufferedSerial* serial = new BufferedSerial(USBTX,USBRX,115200);
-// FileHandle *fh = &serial; // oppure FileHandle fh = new FileHandle(serial)
-
-// #if PIL_MODE
-//   #include "UDPPIL.hpp"
-//   /** This spawns the thread responsible for receving/sending simulation data from/to an external PC. It is enables only if 
-//    * the build flag PIL_MODE is set to 1. The thread function is in UDPComm.cpp
-//    */
-//   Thread UDPIO_PIL(osPriorityHigh,8092,nullptr,UDP_PIL_thread_name);
-// #endif
-
-
-Thread ControllerInit(osPriorityHigh,8092,nullptr,cntrInit_thread_name);
 Thread SensorInit(osPriorityNormal,8092,nullptr,sensInit_thread_name);
 Thread OutputPortInit(osPriorityNormal,16184,nullptr,outportInit_thread_name);
-Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
-// Thread UDPMavlinkComm(osPriorityNormal,16184,nullptr,UDPMavlink_thread_name);
-Thread Navigator(osPriorityNormal,16184,nullptr,Navi_thread_name);
+Thread Navigator(osPriorityNormal,16184,nullptr,navi_thread_name);
 Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
-// Thread SDStorage(osPriorityNormal,8092,nullptr,sdcard_thread_name); 
 
-/** Defining semaphores for synchronization purposes
- * 
- */
+
+/* serial channel for command line */
+BufferedSerial* serial_channel = new BufferedSerial(USBTX,USBRX,115200);
+
+const char* cli_thread_name = "cli";
+Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
+
+
+// init syncro objs
 Semaphore semDecode(0), semEncode(0), semUDPNav(0), semNavContr(0), semContrPWM(0);
-bool flagMavlink = false;
 
-// Servo servo1(PTC2);
+Mutex led_lock;
 
-/** Defining global queue in which sensor/actuators event run
- * 
- */
-// EventQueue queue(32);
 
-/** Defining global inputs/outputs of the controller feedback_control.cpp
- * 
- */ 
+// Defining global inputs/outputs of the controller and his thread 
 ExtU_PI_contr_T PI_contr_U;     // External inputs
 ExtY_PI_contr_T PI_contr_Y;     // External outputs
 
-/** Defining global mavlink messages declared in global_msgs.hpp
- * 
- */
+const char* cntrInit_thread_name = "cntrInit";
+Thread ControllerInit(osPriorityHigh,8092,nullptr,cntrInit_thread_name);
+
+
+// init communication
+// bool flagMavlink = false;
+mavlink_attitude_t att;
 mavlink_odometry_t odom;
 mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
-/** Defining global onboard accelerometer and magnetometer values
- * 
- */
+#if PIL_MODE
+  #include "UDPPIL.hpp"
+  /** This spawns the thread responsible for receving/sending simulation data from/to an external PC. It is enables only if 
+   * the build flag PIL_MODE is set to 1. The thread function is in UDPComm.cpp
+   */
 
-// Data accmagValues;
-
-// Data accmagValues;
-
-/** Initializing ethernet interface and the socket to enable UDP communications in threads UDPMavlink.cpp and UDPPIL.cpp
- * 
- */
-// EthernetInterface eth;
-// UDPSocket socket;
-
-/** Defining mutex locks
- * 
- */
-Mutex led_lock;
-
+  const char* UDP_PIL_thread_name = "UDPPIL";
+  Thread UDPIO_PIL(osPriorityHigh,8092,nullptr,UDP_PIL_thread_name);
+#endif
 
 int main() 
 {
@@ -116,28 +85,52 @@ int main()
   #if PIL_MODE // Start UDP communtication only if in PIL mode!
     UDPIO_PIL.start(UDPPIL);
   #endif
+
   printf(" ====== Firmware is starting... ====== \n");
 
   printf("Spawning threads...\n");
-  // SDStorage.start(massStorage);
-  // printf("%s thread started\n", sdcard_thread_name);
-  // SDStorage.join();
-  // printf("Mass storage initialized\n");
-  // ControllerInit.start(cntrInit);
-  // printf("%s thread started\n", cntrInit_thread_name);
+
+  /*
+  SDStorage.start(massStorage);
+  printf("%s thread started\n", sdcard_thread_name);
+  SDStorage.join();
+  printf("Mass storage initialized\n"); 
+  */
+
   SensorInit.start(sensInit);
-  // OutputPortInit.start(outportInit);
-  // UDPMavlinkComm.start(UDPMavlink);
-  // Navigator.start(navigator);
-  //Prognostic.start(prognostic);
-  // CommandLineInterface.start(callback(cli2,serial));
-  // printf("Command line available\n");
+  printf("%s thread started\n", sensInit_thread_name);
+
+  OutputPortInit.start(outportInit);
+  printf("%s thread started\n", outportInit_thread_name);
+
+  Prognostic.start(prognostic);
+  printf("%s thread started\n", prognostic_thread_name);
+
+  Navigator.start(navigator);
+  printf("%s thread started\n", navi_thread_name);
+
+  ControllerInit.start(cntrInit);
+  printf("%s thread started\n", cntrInit_thread_name);
+
+  ThisThread::sleep_for(5s);
   
-  // ControllerInit.join();
-  
+  /*
+  #if EKF_TASK
+  EKFInit.start(ekfInit);
+  printf("%s thread started\n", ekfInit_thread_name);
+  #endif
+
+  #if APF_TASK
+  APFInit.start(apfInit);
+  printf("%s thread started\n", apfInit_thread_name);
+  #endif
+  */
+
+  CommandLineInterface.start(callback(cli,serial_channel));
+  printf("Command line available\n");
   
   while(1) {
-    ThisThread::sleep_for(900);
+    ThisThread::sleep_for(1s);
   }
   
 }

@@ -16,8 +16,7 @@
 */
 #include <mbed.h>
 #include "cli_appereance.hpp"
-
-#include "sysinfo.hpp"
+#include "cli.hpp"
 
 #if !defined(MBED_SYS_STATS_ENABLED)
 #error [NOT_SUPPORTED] test not supported
