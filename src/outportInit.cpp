@@ -13,6 +13,7 @@
 #include "global_vars.hpp"
 #include "TankMotor.hpp"
 #include "outportInit.hpp"
+#include "commander.hpp"
 
 
 float pos = 75.0/180;
@@ -33,6 +34,10 @@ Event<void(void)> motorwriteEvent(&queuePWM,MotorWriteHandler);
  */
 void outportInit()
 {
+    print_lock.lock();
+    printf("Start outport thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
+
     //servo1.calibrate(0.0005,90); // 0.0005 s from center (1.5ms) to max/min. The Servo::calibrate() method accepts as first input a value IN SECONDS.
     
     //servopwm.pulsewidth_us(1500);
@@ -41,6 +46,13 @@ void outportInit()
     MotorWriteEventSetup();
 
     queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
+
+    // reach this point only when queue is stopped
+    print_lock.lock();
+    printf("End outport thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
+
+    return;
 }
 
 // The period and the initial delay of the PWM write event are set. Then it is posted in the queue.
@@ -64,6 +76,12 @@ void MotorWriteEventSetup(void)
 
 void ServoWriteHandler(void)
 {
+    /*
+    print_lock.lock();
+    printf("Servo event handler thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
+    */
+
     // TODO add semaphore in here!
     /*if (pos <= 75.0/180)
     {
@@ -86,10 +104,27 @@ void ServoWriteHandler(void)
     // servo1.write(pos);
     // printf("\033[1;1H");
     // printf("pos given to pwm port: %f\n",pos);
+    
+    /*
+    print_lock.lock();
+    if (main_commander->is_armed()){
+        // output enabled
+        printf("Wrinte on servo output port\n\r");
+    }else{
+        printf("Output disabled, drone DISARMED!!\n\r");
+    }
+    print_lock.unlock();
+    */
 }
 
 void MotorWriteHandler(void)
 {
+    /*
+    print_lock.lock();
+    printf("Motor event handler thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
+    */
+
     // printf("\033[2;50Hout1");
     // semContrPWM.acquire();
     // printf("\033[2;50Hout2");
@@ -119,4 +154,15 @@ void MotorWriteHandler(void)
 
     // leftMotor.Move(0);
     // rightMotor.Move(0);
+    
+    /*
+    print_lock.lock();
+    if (main_commander->is_armed()){
+        // output enabled
+        printf("Wrinte on motor output port\n\r");
+    }else{
+        printf("Output disabled, drone DISARMED!!\n\r");
+    }
+    print_lock.unlock();
+    */
 }
