@@ -1,9 +1,7 @@
 {
     "target_overrides": {
         "*": {
-            "platform.all-stats-enabled": true,
-            "target.printf_lib": "std",
-            "target.fprintf_lib": "std"
+            "platform.all-stats-enabled": true
         }
     }
 }

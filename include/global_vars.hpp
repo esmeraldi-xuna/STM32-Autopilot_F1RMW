@@ -17,8 +17,14 @@
 extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
 
 
-extern Mutex led_lock;
+extern Mutex led_lock, print_lock;
 
+
+/////////////////////////////////  commander   /////////////////////////////////////
+
+// commander for arming/disaming
+#include "commander.hpp" 
+extern Commander* main_commander;
 
 
 /////////////////////////////////  controller   /////////////////////////////////////

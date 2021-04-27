@@ -2,7 +2,7 @@
 #define COMMAND_LINE_H
 
 #include <mbed.h>
-#include "BufferedSerial.h"
+// #include "BufferedSerial.h"
 
 
 enum __command 
@@ -16,9 +16,10 @@ enum __command
     cmd_invalid,
 };
 
-void cli(BufferedSerial *serial);
+void cli();
 
-__command handleInput(BufferedSerial *serial);
+//__command handleInput(BufferedSerial *serial);
+__command get_command(char*);
 
 void help(void);
 
@@ -26,6 +27,6 @@ int sysinfo(void);
 
 int threadinfo(void);
 
-int top(BufferedSerial *serial);
+// int top(BufferedSerial *serial);
 
 #endif

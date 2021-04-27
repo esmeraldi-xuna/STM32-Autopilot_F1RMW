@@ -20,6 +20,7 @@
 #include <ThisThread.h>
 #include <Thread.h>
 #include <rtos.h>
+#include "commander.hpp"
 
 #define MPU6050_ADDRESS             0x69
 #define MPU9250_FREQ                200ms         // in milliseconds!
@@ -62,12 +63,17 @@ Thread SensorRead(osPriorityNormal,8092,nullptr,"sensRead");
 void sensInit()
 {
     bool flag = false; 
+    print_lock.lock();
+    printf("Start sensors thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
 
     // Accelerometer and gyroscope initialization
     uint8_t whoami = imu.readByte(MPU9250_ADDRESS, WHO_AM_I_MPU9250);  // Read WHO_AM_I register for MPU-925
     if (whoami==0x71)
     {
+        print_lock.lock();
         printf("MPU9250 online\n\r");
+        print_lock.unlock();
         flag = true; 
 
         // Calibrate IMU 
@@ -87,14 +93,22 @@ void sensInit()
     }
     else
     {
+        print_lock.lock();
         printf("Cannot reach MPU9250!\n\r");
+        print_lock.unlock();
+
+        if (main_commander->is_armed())
+            main_commander->disarm();
     }
     
     // Magnetometer initialization
     whoami = imu.readByte(AK8963_ADDRESS, WHO_AM_I_AK8963);
     if (whoami==0x48) 
     {
+        print_lock.lock();
         printf("AK8963 online\n\r");
+        print_lock.unlock();
+
         flag = flag && true;  
         // Open file with params and get them...
         // if (readFromSD(mag_extremes, "Magnetometer extremes [minXYZ; maxXYZ]\n") < 0)
@@ -124,22 +138,37 @@ void sensInit()
     else
     {
         flag = flag && false;
+        print_lock.lock();
         printf("Cannot reach AK8963!\n\r");
+        print_lock.unlock();
+
+        if (main_commander->is_armed())
+            main_commander->disarm();
     }
-    printf("\033[2J");
+    //printf("\033[2J");
 
     // Launch event if MPU9250 and AK8963 are ok
     if (flag)
     {
         SensorRead.start(postSensorEvent);
         queue.dispatch_forever();
+        // go ahead only if queue is stopped
     }
     else
     {
+        print_lock.lock();
         printf("Error with MPU9250 sensor\n\r"); 
-        return; 
+        print_lock.unlock();
+
+        if (main_commander->is_armed())
+            main_commander->disarm(); 
     }
-    // SDaccessQueue.dispatch();
+
+    print_lock.lock();
+    printf("End sensors thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
+
+    return;
 }
 
 void postSensorEvent(void)

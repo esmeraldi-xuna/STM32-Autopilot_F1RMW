@@ -19,22 +19,120 @@
 
 #include "cli.hpp"
 #include "cli_appereance.hpp"
+#include "global_vars.hpp"
 
 int ii;
 
-const char* prompt = "user@k64f >> ";
+const char* prompt = "user@stm32 >> ";
 
-char firstbyte[1];
+char tmp;
 
-std::string cliBuffer;
+char cliBuffer[20];
 
-__command cmd_enum, command;
+__command command;
 
+void cli(void)
+{
+    int i=0;
+
+    print_lock.lock();
+    printf("Commnad line init, thread ID: %d\n\r", (int)ThisThread::get_id());
+    print_lock.unlock();
+
+    // wait inizialization
+    ThisThread::sleep_for(5s);
+
+    print_lock.lock();
+    // printf("\033[2J\033[1;1H");
+    std::printf("New Terminal\n");
+    print_lock.unlock();
+    
+
+    // start getting input
+    while (1)
+    {
+
+        // console ready
+        ThisThread::sleep_for(100ms);
+        print_lock.lock();
+        printf("\n%s",prompt);
+        print_lock.unlock();
+        ThisThread::sleep_for(100ms);
+        
+        i=0;
+        do{
+            tmp=getchar();
+            cliBuffer[i]=tmp;
+            i++;
+            putchar(tmp);
+        }while(tmp != '\n');
+        cliBuffer[i-1]='\0';
+
+        //printf("\nget: %s\n", cliBuffer);
+        command = get_command(cliBuffer);
+
+        print_lock.lock();
+        switch (command)
+        {
+        case cmd_sys_info:
+            sysinfo();
+            break;
+
+        case cmd_thread_info:
+            threadinfo();
+            break;
+
+        case cmd_return:
+            break;
+
+        case cmd_clear:
+            printf("\033[2J\033[1;1H");
+            break;
+
+        case cmd_help:
+            help();
+            break;
+
+        case cmd_invalid:
+            printf(RED("\nType a valid command\n"));
+            break;
+        }
+        print_lock.unlock();
+    }
+}
+
+
+__command get_command(char* str){
+
+    if (strcmp(str, "info")== 0){
+        return cmd_sys_info;
+    }
+    if (strcmp(str, "thread")== 0){
+        return cmd_thread_info;
+    }
+    if (strcmp(str, "clear")== 0){
+        return cmd_clear;
+    }
+    if (strcmp(str, "help")== 0){
+        return cmd_help;
+    }
+    if (strcmp(str, "return")== 0){
+        return cmd_return;
+    }
+    if (strcmp(str, "top")== 0){
+        return cmd_top;
+    }
+    return cmd_invalid;
+}
+
+/*
 void cli(BufferedSerial *serial)
 {
     // serial->getc();
     // serial->read(buff, sizeof(buff));
     // serial->set_blocking(0);
+
+    printf("Commnad line init, thread ID: %d\n\r", ThisThread::get_id());
 
     // wait inizialization
     ThisThread::sleep_for(5s);
@@ -153,4 +251,4 @@ __command handleInput(BufferedSerial *serial)
     cliBuffer.clear();
 
     return cmd_enum;
-}
+}*/

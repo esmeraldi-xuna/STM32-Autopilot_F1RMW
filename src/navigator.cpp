@@ -174,10 +174,6 @@ void navigator()
         //     feedback_control_U.X_ref = 0;
         //     feedback_control_U.psi_ref = 0;
             
-        // }
-        
+        // }   
     }
-
-
-
 }

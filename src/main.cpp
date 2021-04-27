@@ -9,13 +9,14 @@
 
 // not edited
 #include <mbed.h>
-#include <BufferedSerial.h>
+// #include <BufferedSerial.h>
 #include "Thread.h"
 #include "mavlink/common/mavlink.h"
 
 // edited
 #include "cli.hpp"
 #include "cntrInit.hpp"
+#include "commander.hpp"
 #include "global_vars.hpp"
 #include "navigator.hpp"
 #include "outportInit.hpp"
@@ -40,8 +41,12 @@ Thread Navigator(osPriorityNormal,16184,nullptr,navi_thread_name);
 Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
 
 
+// commander for arming/disaming
+Commander* main_commander = new Commander();
+
+
 /* serial channel for command line */
-BufferedSerial* serial_channel = new BufferedSerial(USBTX,USBRX,115200);
+// BufferedSerial* serial_channel = new BufferedSerial(USBTX,USBRX,115200);
 
 const char* cli_thread_name = "cli";
 Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
@@ -50,7 +55,7 @@ Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
 // init syncro objs
 Semaphore semDecode(0), semEncode(0), semUDPNav(0), semNavContr(0), semContrPWM(0);
 
-Mutex led_lock;
+Mutex led_lock, print_lock;
 
 
 // Defining global inputs/outputs of the controller and his thread 
@@ -79,42 +84,54 @@ mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
 int main() 
 {
-  printf("\033[2J");
+  //printf("\033[2J");
   set_time(0);
 
   #if PIL_MODE // Start UDP communtication only if in PIL mode!
     UDPIO_PIL.start(UDPPIL);
   #endif
 
-  printf(" ====== Firmware is starting... ====== \n");
+  print_lock.lock();
+  printf("\n\n\n ====== Firmware is starting... ====== \n");
 
   printf("Spawning threads...\n");
+  print_lock.unlock();
 
-  /*
+/* // not used
   SDStorage.start(massStorage);
+  print_lock.lock();
   printf("%s thread started\n", sdcard_thread_name);
   SDStorage.join();
   printf("Mass storage initialized\n"); 
-  */
+  print_lock.unlock();
+*/ 
 
   SensorInit.start(sensInit);
+  print_lock.lock();
   printf("%s thread started\n", sensInit_thread_name);
+  print_lock.unlock();
 
   OutputPortInit.start(outportInit);
+  print_lock.lock();
   printf("%s thread started\n", outportInit_thread_name);
-
-  Prognostic.start(prognostic);
+  print_lock.unlock();
+  
+  /*
+  Prognostic.start(prognostic); // unused without battery
   printf("%s thread started\n", prognostic_thread_name);
 
-  Navigator.start(navigator);
+  Navigator.start(navigator); // do nothing
   printf("%s thread started\n", navi_thread_name);
+  */
 
   ControllerInit.start(cntrInit);
+  print_lock.lock();
   printf("%s thread started\n", cntrInit_thread_name);
+  print_lock.unlock();
 
   ThisThread::sleep_for(5s);
   
-  /*
+  /* not added
   #if EKF_TASK
   EKFInit.start(ekfInit);
   printf("%s thread started\n", ekfInit_thread_name);
@@ -126,11 +143,13 @@ int main()
   #endif
   */
 
-  CommandLineInterface.start(callback(cli,serial_channel));
+  CommandLineInterface.start(cli);
+  print_lock.lock();
   printf("Command line available\n");
-  
+  print_lock.unlock();
+
   while(1) {
-    ThisThread::sleep_for(1s);
-  }
-  
+    ThisThread::sleep_for(5s);
+    //printf("Hello\n");
+  }  
 }

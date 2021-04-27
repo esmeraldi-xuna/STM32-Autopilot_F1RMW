@@ -22,6 +22,10 @@ Thread Controller(osPriorityRealtime,CONTROLLER_STACK_SIZE,nullptr,Controller_th
 
 void cntrInit(void)
 {
+    print_lock.lock();
+    printf("Start controller init thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
+
     led_lock.lock();
     initLED = 0;
     RT_MODEL_PI_contr_T *const PI_contr_M = PI_contr_MPtr;
@@ -33,9 +37,12 @@ void cntrInit(void)
     
     ThisThread::sleep_for(2s);
     // Spawn controller task
-    Controller.start(callback(rt_OneStep,PI_contr_M));
+    // Controller.start(callback(rt_OneStep,PI_contr_M)); // now not used
     
     initLED = !initLED;
     led_lock.unlock();
 
+    print_lock.lock();
+    printf("End controller init thread ID: %d\n\r", ThisThread::get_id());
+    print_lock.unlock();
 }
