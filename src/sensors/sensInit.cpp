@@ -7,28 +7,22 @@
 //TODO Check mag bias and calibration!!!! (line 115)
 
 #include <mbed.h>
-#include "MPU9250.h"
-#include "SonarMaxBotix.h"
-#include "global_vars.hpp"
-// #include "massStorage.hpp"
-
-#include "sensInit.hpp"
 #include "EventQueue.h"
 #include "Event.h"
 #include "math.h"
-// #include "magCalibrate.hpp"
-#include <ThisThread.h>
-#include <Thread.h>
-#include <rtos.h>
+
+#include "MPU9250.h"
+#include "SonarMaxBotix.h"
+
+#include "sensInit.hpp"
+#include "global_vars.hpp"
 #include "commander.hpp"
+
+// #include "massStorage.hpp"
+// #include "magCalibrate.hpp"
 
 #define MPU6050_ADDRESS             0x69
 #define MPU9250_FREQ                200ms         // in milliseconds!
-
-// using namespace events;
-// using namespace rtos;
-// using namespace ThisThread;
-// using namespace mbed;
 
 // Create imu object 
 MPU9250 imu(PA_10,PA_9);
@@ -36,35 +30,28 @@ MPU9250 imu(PA_10,PA_9);
 // Create sonar object
 SonarMaxBotix sonar(A0); 
 
-// CalibrateMagneto magCal;
-// DigitalOut calib_led(LED_GREEN,1), controllerLedSensorThread(LED_BLUE,1);
+// timer (used in read_sensors_eventHandler)
+// Timer timerSesnInt;
 
-// FILE *f_calib;
-
+/*
 float roll,pitch,mag_norm;
 float magValues[3], magValues_filt[3], minExtremes[3], maxExtremes[3], minMag[3], maxMag[3];
 int measurements_count = 0, id_calib;
 char f_buff[100], f_buff_disc[100], temp_char;
-float mag_extremes[6];
+float mag_extremes[6];*/
 float altitude; 
 
 EventQueue queue;
-// EventQueue SDaccessQueue(8096);
-Event<void(void)> accmagreadEvent(&queue,AccMagRead);
-// Event<void(void)> calibrationEvent(mbed_event_queue(),calibration);
+Event<void(void)> read_sensors_event(&queue, read_sensors_eventHandler);
 
-// const char* sdcard_access_thread_name = "SDStorageAccess";
-// Thread SDStorageAccess(osPriorityNormal,16184,nullptr,sdcard_access_thread_name);
-
-// InterruptIn irq(PTA4);
-Timer timerSesnInt;
-Thread SensorRead(osPriorityNormal,8092,nullptr,"sensRead");
 
 void sensInit()
 {
-    bool flag = false; 
+    bool flag_MPU9250_online = false, flag_MPU9250_calibrated = false;
+    bool flag_AK8963_online = false, flag_AK8963_calibrated = false; 
+
     print_lock.lock();
-    printf("Start sensors thread ID: %d\n\r", ThisThread::get_id());
+    printf("Start sensors thread ID: %d\n", ThisThread::get_id());
     print_lock.unlock();
 
     // Accelerometer and gyroscope initialization
@@ -72,12 +59,14 @@ void sensInit()
     if (whoami==0x71)
     {
         print_lock.lock();
-        printf("MPU9250 online\n\r");
+        printf("MPU9250 online\n");
         print_lock.unlock();
-        flag = true; 
+        flag_MPU9250_online = true; 
 
         // Calibrate IMU 
         imu.calibrateMPU9250(imu.gyroBias, imu.accelBias); // Calibrate gyro and accelerometers, load biases in bias registers  
+        flag_MPU9250_calibrated = true;
+
         // Initialize accelerometer and gyroscope
         imu.initMPU9250();        
         imu.getAres(); // Get accelerometer sensitivity
@@ -94,11 +83,11 @@ void sensInit()
     else
     {
         print_lock.lock();
-        printf("Cannot reach MPU9250!\n\r");
+        printf("Cannot reach MPU9250!\n");
         print_lock.unlock();
 
-        if (main_commander->is_armed())
-            main_commander->disarm();
+        flag_MPU9250_online = false;
+        flag_MPU9250_calibrated = false;
     }
     
     // Magnetometer initialization
@@ -106,58 +95,48 @@ void sensInit()
     if (whoami==0x48) 
     {
         print_lock.lock();
-        printf("AK8963 online\n\r");
+        printf("AK8963 online\n");
         print_lock.unlock();
+        flag_AK8963_online = true;    
 
-        flag = flag && true;  
-        // Open file with params and get them...
-        // if (readFromSD(mag_extremes, "Magnetometer extremes [minXYZ; maxXYZ]\n") < 0)
-        // {
-        //     // MBED_WARNING(MBED_MAKE_ERROR(MBED_MODULE_APPLICATION, MBED_ERROR_CODE_FAILED_OPERATION),"SD card has no calib.txt file to open! Please format the SD card and calibrate\n");
-        //     printf("SD card has no calib.txt file to open! Please format the SD card and calibrate\n");
-        // }
-        // else
-        // {
-        //     minExtremes[0] = mag_extremes[0];
-        //     minExtremes[1] = mag_extremes[1];
-        //     minExtremes[2] = mag_extremes[2];
-        //     maxExtremes[0] = mag_extremes[3];
-        //     maxExtremes[1] = mag_extremes[4];
-        //     maxExtremes[2] = mag_extremes[5];
-        //     magCal.setExtremes(minExtremes,maxExtremes);
-        //     for (int ii = 0; ii < 6; ii++)
-        //     {
-        //         printf("data out mag extr %f\n", mag_extremes[ii]);
-        //     }
-            
-        // }
         imu.initAK8963(imu.magCalibration);
+        flag_MPU9250_calibrated = true; // ???????????
+        
         imu.getMres(); // Get mag sensitivity
-        imu.magbias[0] = +470.; imu.magbias[1] = +120.; imu.magbias[2] = +125.;
+        imu.magbias[0] = +470.;
+        imu.magbias[1] = +120.;
+        imu.magbias[2] = +125.;
     }
     else
     {
-        flag = flag && false;
         print_lock.lock();
-        printf("Cannot reach AK8963!\n\r");
+        printf("Cannot reach AK8963!\n");
         print_lock.unlock();
 
-        if (main_commander->is_armed())
-            main_commander->disarm();
+        flag_AK8963_online = false;
+        flag_AK8963_calibrated = false;
     }
-    //printf("\033[2J");
 
-    // Launch event if MPU9250 and AK8963 are ok
-    if (flag)
+    // Launch events if all sensors are online
+    if (flag_MPU9250_online && flag_AK8963_online)
     {
-        SensorRead.start(postSensorEvent);
+        // setup events and post on queue
+        postSensorEvent();
+
+        if(flag_MPU9250_calibrated && flag_MPU9250_calibrated){
+            // all sensors online and calibrated
+            main_commander->arm();
+        }
+
+        // start dipatching
         queue.dispatch_forever();
-        // go ahead only if queue is stopped
+
+        // reach this point only if queue is stopped
     }
     else
     {
         print_lock.lock();
-        printf("Error with MPU9250 sensor\n\r"); 
+        printf("Error with sensors\n"); 
         print_lock.unlock();
 
         if (main_commander->is_armed())
@@ -173,40 +152,16 @@ void sensInit()
 
 void postSensorEvent(void)
 {
-    // Write here the sensor read events to post them into the queue!
-    accmagreadEvent.period(MPU9250_FREQ); 
-    accmagreadEvent.delay(200ms);
-    accmagreadEvent.post();
-    // queue.call_every(200,AccMagRead);
+    // setup event params and post
+    read_sensors_event.period(MPU9250_FREQ); 
+    read_sensors_event.delay(200ms);
+    read_sensors_event.post();
 }
 
 // TODO: add semaphore to protect the write-to-buffer operation in the following event!
-void AccMagRead(void) // Event to copy sensor value from its register to extern variable
+void read_sensors_eventHandler(void) // Event to copy sensor value from its register to extern variable
 {
-    // accmagValues = accmag.get_values();
-    // magValues[0] = accmagValues.mx;
-    // magValues[1] = accmagValues.my;
-    // magValues[2] = accmagValues.mz;
-    // magCal.run(magValues,magValues_filt);
-    // // mag_norm=0.00001;
-    // mag_norm = sqrt(accmagValues.mx*accmagValues.mx + accmagValues.my*accmagValues.my + accmagValues.mz*accmagValues.mz);
-    // accmagValues.mx = accmagValues.mx/mag_norm;
-    // accmagValues.my = accmagValues.my/mag_norm;
-    // accmagValues.mz = accmagValues.mz/mag_norm;
-    // pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
-    // roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
-    // // feedback_control_U.psi_est = atan2(-accmagValues.my*cos(roll) - accmagValues.mz*sin(roll),accmagValues.mx*cos(pitch) \
-    //                             + accmagValues.my*sin(pitch)*sin(roll) - accmagValues.mz*sin(pitch)*cos(roll))*180/3.14;
-    // PI_contr_U.psi_odom = atan2(magValues_filt[1],magValues_filt[0])*180/3.14;
-    // printf("yaw: %f\n",feedback_control_U.psi_est);
-    // printf("ax: %.2f ay: %.2f az: %.2f pitch: %.2f roll: %.2f yaw: %.2f mx: %.2f my: %.2f mz: %.2f\n", \ 
-            // accmagValues.ax, accmagValues.ay, accmagValues.az, pitch*180/3.14, roll*180/3.14, feedback_control_U.psi_est, accmagValues.mx, accmagValues.my, accmagValues.mz);
-    // feedback_control_U.reference = (accmagValues.ax + 1)/2; // Normalized between 0 and 1
-    // feedback_control_U.estimated = 0;//servo1.read();
-    // printf("\033[2;1H");
-    // printf("acc read: %f servo read: %f\n", feedback_control_U.reference,feedback_control_U.estimated);
-    // printf("%f\n", accmagValues.ax);
-
+    // read data from MPU9250 and AK8963
     if(imu.readByte(MPU9250_ADDRESS,INT_STATUS & 0x01))     // if there are new data
     {
         // imu.deltat=timerSesnInt.read();
@@ -230,26 +185,48 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
 
         imu.pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
         imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
-        imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) \
-                                + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
+        imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
 
-        // Read sonar data
-        altitude = sonar.distance_analog(); 
-    
+
+        // how to pass data to other thread?????
+
+
         // Print data
-        
         // printf("")
-        printf("Altitude: %.2f\n",altitude);
         // printf("roll: %.2f \t pitch: %.2f \t yaw: %.2f \t \n",imu.roll*180./PI,imu.pitch*180./PI, imu.yaw*180/PI);
         // printf("magCount: %e \t%e\t%e\t\n",imu.magCount[0],imu.magCount[1],imu.magCount[2]); 
         // printf("magCalibration: %f\t%f\t%f\t\n",imu.magCalibration[0],imu.magCalibration[1],imu.magCalibration[2]); 
         // printf("mres: %f\n",imu.mRes); 
-
         // printf("%f\t%f\t%f\t\n",imu.mx,imu.my,imu.mz);
     }
 
+    // read data from sonar
+    altitude = sonar.distance_analog();
+    printf("Altitude: %.2f\n",altitude);
+
+    // for manual calibration, handled with interrupt (button)
     // irq.rise(calib_irq_handle);
 }
+
+
+
+
+
+
+
+
+
+
+
+//////////////////////////////////// for calibration ///////////////////////////////
+
+/*
+// for manual calibration, handled with interrupt (button)
+InterruptIn irq(PTA4);
+Event<void(void)> calibrationEvent(mbed_event_queue(),calibration);
+CalibrateMagneto magCal;
+DigitalOut calib_led(LED_GREEN,1), controllerLedSensorThread(LED_BLUE,1);
+*/
 
 // Interrupt handler that starts the calibration
 // void calib_irq_handle(void)
@@ -287,6 +264,24 @@ void AccMagRead(void) // Event to copy sensor value from its register to extern 
 //         led_lock.unlock();
 //     }
     
+
+
+
+
+
+
+
+//////////////////////////////////// for SD ///////////////////////////////
+
+/*
+// if SD is mounted
+EventQueue SDaccessQueue(8096);
+FILE *f_calib;
+const char* sdcard_access_thread_name = "SDStorageAccess";
+Thread SDStorageAccess(osPriorityNormal,16184,nullptr,sdcard_access_thread_name);
+*/
+
+
 // }
 // void refreshParamFileSD(void)
 // {

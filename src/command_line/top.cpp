@@ -30,7 +30,7 @@ uint64_t prev_idle_time = 0;
 int32_t wait_time_ms = 5000;
 
 Timer tim;
-bool exit_flag;
+rtos::Mutex lock_screen;
 
 void print_cpu_stats()
 {
@@ -42,6 +42,8 @@ void print_cpu_stats()
     uint8_t idle = (diff_usec * 100) / (SAMPLE_TIME_MS*1000);
     uint8_t usage = 100 - ((diff_usec * 100) / (SAMPLE_TIME_MS*1000));
     prev_idle_time = stats.idle_time;
+
+    lock_screen.lock();
 
     printf("\033[5;1H\033[5K"); // Set cursor to row 2 column 1 and clear that line
     printf(GREEN("||"));
@@ -81,11 +83,12 @@ void print_cpu_stats()
     
     printf("\033[118G");
     printf(GREEN("||\n"));
+
+    lock_screen.unlock();
 }
 
-int top(BufferedSerial *serial)
+int top()
 {
-    exit_flag = 0;
     tim.reset();
     printf("\033[2J\033[1;1H"); // Clear terminal (2J) and set cursor to 1,1 (1;1H) --> CSI codes wikipedia!!!
     printf(GREEN("                                                          ___\n"));
@@ -104,15 +107,17 @@ int top(BufferedSerial *serial)
 
     while(1)
     {
-        if (serial->readable())
-            {
-                // char k = serial->getc();
-                exit_flag = 1;
-                break;
-            }
-        ThisThread::sleep_for(11ms);
+        if (getchar()){ // press any button to exit
+            // stop queue and exit
+            stats_queue->cancel(id);
+            break;
+        }
+        ThisThread::sleep_for(50ms);
     }
-    stats_queue->cancel(id);
-    // thread->terminate();
+
+    // wait untill last print is ended
+    lock_screen.lock();
+    printf(GREEN("\n"));
+    lock_screen.unlock();
     return 0;
 }

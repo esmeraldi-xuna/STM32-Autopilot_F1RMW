@@ -49,6 +49,30 @@ extern mavlink_attitude_t att;
 extern mavlink_odometry_t odom;
 extern mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
+
+
+/////////////////////////////////  global variables to display   /////////////////////////////////////
+
+/*
+struct data_t{
+    struct z{
+        int altitude;
+        int accel;
+    }sensors;
+
+    struct y{
+        ExtU_PI_contr_T* PI_contr_U; 
+        ExtY_PI_contr_T* PI_contr_Y; 
+    }controller;
+
+    struct x{
+        int motor1;
+        int motor2;
+    }pwm;
+} output_data;
+*/
+
+
 #endif
 
 /////////////////////////////////  unused   /////////////////////////////////////

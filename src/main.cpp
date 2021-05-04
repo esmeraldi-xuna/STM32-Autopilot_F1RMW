@@ -9,7 +9,6 @@
 
 // not edited
 #include <mbed.h>
-// #include <BufferedSerial.h>
 #include "Thread.h"
 #include "mavlink/common/mavlink.h"
 
@@ -28,28 +27,35 @@ using namespace rtos;
 using namespace ThisThread;
 using namespace mbed;
 
+#define OVERRIDE_CONSOLE 0
+
+#if OVERRIDE_CONSOLE
+FileHandle *mbed::mbed_override_console(int) {
+  PinName pin_for_TX = //A0; to be defined
+  PinName pin_for_RX = //A1; to be defined
+  int baud_rate = 115200;
+
+  static BufferedSerial my_serial(pin_for_TX, pin_for_RX, baud_rate);
+  return &my_serial;
+}
+#endif
 
 // defining threads
 const char* sensInit_thread_name = "sensInit";
 const char* outportInit_thread_name = "outportInit";
 const char* navi_thread_name = "Navigator";
 const char* prognostic_thread_name = "Prognostic";
+const char* cli_thread_name = "cli";
 
 Thread SensorInit(osPriorityNormal,8092,nullptr,sensInit_thread_name);
 Thread OutputPortInit(osPriorityNormal,16184,nullptr,outportInit_thread_name);
 Thread Navigator(osPriorityNormal,16184,nullptr,navi_thread_name);
 Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
+Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
 
 
 // commander for arming/disaming
 Commander* main_commander = new Commander();
-
-
-/* serial channel for command line */
-// BufferedSerial* serial_channel = new BufferedSerial(USBTX,USBRX,115200);
-
-const char* cli_thread_name = "cli";
-Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
 
 
 // init syncro objs
@@ -84,7 +90,7 @@ mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
 int main() 
 {
-  //printf("\033[2J");
+  printf("\033[2J\033[1;1H"); // clear screen
   set_time(0);
 
   #if PIL_MODE // Start UDP communtication only if in PIL mode!
@@ -92,7 +98,7 @@ int main()
   #endif
 
   print_lock.lock();
-  printf("\n\n\n ====== Firmware is starting... ====== \n");
+  printf("\n ====== Firmware is starting... ====== \n");
 
   printf("Spawning threads...\n");
   print_lock.unlock();

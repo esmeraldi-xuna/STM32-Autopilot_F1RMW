@@ -55,5 +55,21 @@ void help(void)
     printf("\033[118G");
     printf(GREEN("||\n"));
 
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("display");
+    printf("\033[0m\033[15G");
+    printf("Display values of sensors, controller...");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("reset");
+    printf("\033[0m\033[15G");
+    printf("Perform software reset");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
     printf(GREEN("##=================================================== ~~~~~~~~~~~ ===================================================##\n"));
 }
