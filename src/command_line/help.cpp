@@ -59,7 +59,15 @@ void help(void)
     printf("\033[7m");
     printf("display");
     printf("\033[0m\033[15G");
-    printf("Display values of sensors, controller...");
+    printf("Display values only once");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("display_r");
+    printf("\033[0m\033[15G");
+    printf("Display values untill a button is pressed");
     printf("\033[118G");
     printf(GREEN("||\n"));
 

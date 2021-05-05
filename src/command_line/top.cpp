@@ -30,9 +30,8 @@ uint64_t prev_idle_time = 0;
 int32_t wait_time_ms = 5000;
 
 Timer tim;
-rtos::Mutex lock_screen;
 
-void print_cpu_stats()
+void print_cpu_stats(Mutex* lock_screen)
 {
     mbed_stats_cpu_t stats;
     mbed_stats_cpu_get(&stats);
@@ -43,7 +42,7 @@ void print_cpu_stats()
     uint8_t usage = 100 - ((diff_usec * 100) / (SAMPLE_TIME_MS*1000));
     prev_idle_time = stats.idle_time;
 
-    lock_screen.lock();
+    lock_screen->lock();
 
     printf("\033[5;1H\033[5K"); // Set cursor to row 2 column 1 and clear that line
     printf(GREEN("||"));
@@ -84,11 +83,14 @@ void print_cpu_stats()
     printf("\033[118G");
     printf(GREEN("||\n"));
 
-    lock_screen.unlock();
+    lock_screen->unlock();
 }
 
 int top()
 {
+    rtos::Mutex* lock_screen;
+    lock_screen = new Mutex();
+
     tim.reset();
     printf("\033[2J\033[1;1H"); // Clear terminal (2J) and set cursor to 1,1 (1;1H) --> CSI codes wikipedia!!!
     printf(GREEN("                                                          ___\n"));
@@ -103,21 +105,17 @@ int top()
     EventQueue *stats_queue = mbed_event_queue();
     int id;
 
-    id = stats_queue->call_every(std::chrono::milliseconds(SAMPLE_TIME_MS), print_cpu_stats);
+    id = stats_queue->call_every(std::chrono::milliseconds(SAMPLE_TIME_MS), callback(print_cpu_stats, lock_screen));
 
-    while(1)
-    {
-        if (getchar()){ // press any button to exit
-            // stop queue and exit
-            stats_queue->cancel(id);
-            break;
-        }
-        ThisThread::sleep_for(50ms);
+    if (getchar()){ // press any button to exit
+        // stop queue and exit
+        stats_queue->cancel(id);
     }
+    ThisThread::sleep_for(50ms);
 
     // wait untill last print is ended
-    lock_screen.lock();
+    lock_screen->lock();
     printf(GREEN("\n"));
-    lock_screen.unlock();
+    lock_screen->unlock();
     return 0;
 }

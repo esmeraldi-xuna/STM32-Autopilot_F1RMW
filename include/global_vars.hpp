@@ -17,7 +17,7 @@
 extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
 
 
-extern Mutex led_lock, print_lock;
+extern Mutex led_lock, print_lock, displayData_lock;
 
 
 /////////////////////////////////  commander   /////////////////////////////////////
@@ -52,26 +52,9 @@ extern mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
 
 /////////////////////////////////  global variables to display   /////////////////////////////////////
+#include "DisplayData.hpp"
 
-/*
-struct data_t{
-    struct z{
-        int altitude;
-        int accel;
-    }sensors;
-
-    struct y{
-        ExtU_PI_contr_T* PI_contr_U; 
-        ExtY_PI_contr_T* PI_contr_Y; 
-    }controller;
-
-    struct x{
-        int motor1;
-        int motor2;
-    }pwm;
-} output_data;
-*/
-
+extern DisplayData* global_data;
 
 #endif
 

@@ -11,7 +11,8 @@ enum __command
     cmd_thread_info,
     cmd_clear,
     cmd_help,
-    cmd_display,
+    cmd_display_once,
+    cmd_display_repeat,
     cmd_reset,
     cmd_invalid,
 };
@@ -32,7 +33,9 @@ int threadinfo(void);
 
 int top(void);
 
-void display(void);
+void display_once(void);
+
+void display_repeat(void);
 
 void reset(void);
 

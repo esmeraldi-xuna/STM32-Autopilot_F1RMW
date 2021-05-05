@@ -70,8 +70,12 @@ void cli()
             top();
             break;
 
-        case cmd_display:
-            display();
+        case cmd_display_once:
+            display_once();
+            break;
+
+        case cmd_display_repeat:
+            display_repeat();
             break;
 
         case cmd_reset:
@@ -130,7 +134,10 @@ __command string_to_command(char* input){
         return cmd_reset;
     }
     if (strcmp(input, "display")== 0){
-        return cmd_display;
+        return cmd_display_once;
+    }
+    if (strcmp(input, "display_r")== 0){
+        return cmd_display_repeat;
     }
     return cmd_invalid;
 }

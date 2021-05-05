@@ -16,6 +16,7 @@
 #include "cli.hpp"
 #include "cntrInit.hpp"
 #include "commander.hpp"
+#include "DisplayData.hpp"
 #include "global_vars.hpp"
 #include "navigator.hpp"
 #include "outportInit.hpp"
@@ -57,11 +58,13 @@ Thread CommandLineInterface(osPriorityNormal,8092,nullptr,cli_thread_name);
 // commander for arming/disaming
 Commander* main_commander = new Commander();
 
+// struct for storing all data to be displayed
+DisplayData* global_data = new DisplayData();
 
 // init syncro objs
 Semaphore semDecode(0), semEncode(0), semUDPNav(0), semNavContr(0), semContrPWM(0);
 
-Mutex led_lock, print_lock;
+Mutex led_lock, print_lock, displayData_lock;
 
 
 // Defining global inputs/outputs of the controller and his thread 
