@@ -161,9 +161,8 @@ void sensInit()
         count += 3;
         ThisThread::sleep_for(100ms);
 
-        // data available, allows NAV and PI to do one step
-        sem_sens_nav.release();
-        sem_sens_PI.release();
+        // data available, allows EKF to do one step
+        sem_sens_EKF.release();
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,9 +185,6 @@ void postSensorEvent(void)
 // TODO: add semaphore to protect the write-to-buffer operation in the following event!
 void read_sensors_eventHandler(void) // Event to copy sensor value from its register to extern variable
 {
-    // wait write on PWM is completed
-    sem_PWM_sens.acquire();
-
     // read data from MPU9250 and AK8963
     if(imu.readByte(MPU9250_ADDRESS,INT_STATUS & 0x01))     // if there are new data
     {
@@ -231,10 +227,6 @@ void read_sensors_eventHandler(void) // Event to copy sensor value from its regi
     // read data from sonar
     altitude = sonar.distance_analog();
     printf("Altitude: %.2f\n",altitude);
-
-    // data available, allows NAV and PI to do one step
-    sem_sens_nav.release();
-    sem_sens_PI.release();
 
     // for manual calibration, handled with interrupt (button)
     // irq.rise(calib_irq_handle);

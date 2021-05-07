@@ -6,7 +6,7 @@
 #include "rtwtypes.h"
 #include "global_vars.hpp"
 
-#define CONTROLLER_STACK_SIZE 8092
+#define CONTROLLER_STACK_SIZE 4096
 
 
 static RT_MODEL_PI_contr_T PI_contr_M_;

@@ -16,7 +16,8 @@
 
 extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
 
-extern Semaphore sem_nav_PI, sem_PI_PWM, sem_PWM_sens, sem_sens_nav, sem_sens_PI; 
+extern Semaphore sem_nav_ctrl, sem_ctrl_PWM, sem_PWM_sens, sem_sens_EKF, sem_EKF_NAV_ctrl;
+
 
 extern Mutex led_lock, print_lock, displayData_lock;
 
@@ -39,6 +40,19 @@ extern Commander* main_commander;
 extern ExtU_PI_contr_T PI_contr_U;     // External inputs
 extern ExtY_PI_contr_T PI_contr_Y;     // External outputs
 
+
+/////////////////////////////////  EKF   /////////////////////////////////////
+#include "Kalman_filter_conv.h"
+
+extern ExtU_Kalman_filter_conv_T Kalman_filter_conv_U;// External inputs
+extern ExtY_Kalman_filter_conv_T Kalman_filter_conv_Y;// External outputs
+
+
+/////////////////////////////////  controller   /////////////////////////////////////
+#include "APF_conver.h"
+
+extern ExtU_APF_conver_T APF_conver_U; // External inputs
+extern ExtY_APF_conver_T APF_conver_Y; // External outputs
 
 
 /////////////////////////////////  communication   /////////////////////////////////////

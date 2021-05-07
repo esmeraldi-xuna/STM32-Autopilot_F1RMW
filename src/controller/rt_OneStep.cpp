@@ -27,16 +27,13 @@
 #include "PI_contr.h"          /* Model's header file */
 #include "rtwtypes.h"
 #include "math.h"
-
 #include "global_vars.hpp"
-#include "mavlink/common/mavlink.h"
 #include "TankMotor.hpp"
-
-
 #include "rt_OneStep.hpp"
 
-// Semaphore semDecode(0), semEncode(0);
-
+#if MAVLINK
+#include "mavlink/common/mavlink.h"
+#endif
 
 DigitalOut led(LED3,1);
 Kernel::Clock::time_point epoch;
@@ -64,15 +61,15 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
   {
     ////////////////////////////////////// for debug///////////////////////////////////////////////
     
-    // wait data from sensors and NAV
-    sem_sens_PI.acquire();
-    sem_nav_PI.acquire();
+    // wait data from EKF and NAV
+    sem_EKF_NAV_ctrl.acquire();
+    sem_nav_ctrl.acquire();
 
     // do something
     ThisThread::sleep_for(100ms);
 
     // new data available, allows PWM to activate motor
-    sem_PI_PWM.release();
+    sem_ctrl_PWM.release();
     continue;
     //////////////////////////////////////////////////////////////////////////////////////////////////
     

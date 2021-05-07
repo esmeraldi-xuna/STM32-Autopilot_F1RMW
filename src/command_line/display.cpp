@@ -17,7 +17,7 @@ void display_once(void){
 }
 
 void display_repeat(void){
-    Thread cycle_th(osPriorityNormal, 4096, nullptr, "thread");
+    Thread cycle_th(osPriorityNormal, 2048, nullptr, "thread");
     
     exit_flag = false;
     

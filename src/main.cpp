@@ -13,10 +13,12 @@
 
 
 // edited
+#include "apfInit.hpp"
 #include "cli.hpp"
 #include "cntrInit.hpp"
 #include "commander.hpp"
 #include "DisplayData.hpp"
+#include "ekfInit.hpp"
 #include "global_vars.hpp"
 #include "navigator.hpp"
 #include "outportInit.hpp"
@@ -53,13 +55,13 @@ DisplayData* global_data = new DisplayData();
 Semaphore semDecode(0), semEncode(0), semUDPNav(0), semNavContr(0), semContrPWM(0);
 
 /*
-sem_nav_PI       // NAV done -> start PI
-sem_PI_PWM       // PI done -> activate motor
-sem_PWM_sens     // motor activated -> start sensors. Starts with 1 to allow first sensors reading 
-sem_sens_nav     // sensors data acquired -> send to NAV
-sem_sens_PI      // sensors data acquired -> send to PI
+sem_nav_ctrl        // NAV done -> start controller
+sem_ctrl_PWM        // controller done -> activate motor
+sem_PWM_sens        // motor activated -> start sensors. Starts with 1 to allow first sensors reading 
+sem_sens_EKF        // sensors data acquired -> send to EKF
+sem_EKF_NAV_ctrl    // EKF data available -> send to NAV and controller
 */
-Semaphore sem_nav_PI(0), sem_PI_PWM(0), sem_PWM_sens(1), sem_sens_nav(0), sem_sens_PI(0);
+Semaphore sem_nav_ctrl(0), sem_ctrl_PWM(0), sem_PWM_sens(1), sem_sens_EKF(0), sem_EKF_NAV_ctrl(0);
           
 Mutex led_lock, print_lock, displayData_lock;
 
@@ -67,6 +69,16 @@ Mutex led_lock, print_lock, displayData_lock;
 // Defining global inputs/outputs of the controller and his thread 
 ExtU_PI_contr_T PI_contr_U;     // External inputs
 ExtY_PI_contr_T PI_contr_Y;     // External outputs
+
+// EKF
+ExtU_Kalman_filter_conv_T Kalman_filter_conv_U;// External inputs
+ExtY_Kalman_filter_conv_T Kalman_filter_conv_Y;// External outputs
+
+
+// traj_planner (APF)
+ExtU_APF_conver_T APF_conver_U; // External inputs
+ExtY_APF_conver_T APF_conver_Y; // External outputs
+
 
 // init communication
 // bool flagMavlink = false;
@@ -92,17 +104,21 @@ int main()
   // defining threads
   const char* sensInit_thread_name = "sensInit";
   const char* outportInit_thread_name = "outportInit";
-  const char* navi_thread_name = "Navigator";
-  //const char* prognostic_thread_name = "Prognostic";
+  // const char* navi_thread_name = "Navigator";
+  // const char* prognostic_thread_name = "Prognostic";
   const char* cli_thread_name = "cli";
   const char* cntrInit_thread_name = "cntrInit";
+  const char* ekfInit_thread_name = "ekfInit";
+  const char* apfInit_thread_name = "apfInit";
 
   Thread SensorInit(osPriorityNormal,4096,nullptr,sensInit_thread_name);
   Thread OutputPortInit(osPriorityNormal,4096,nullptr,outportInit_thread_name);
-  Thread Navigator(osPriorityNormal,4096,nullptr,navi_thread_name);
+  // Thread Navigator(osPriorityNormal,4096,nullptr,navi_thread_name);
   // Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
   Thread CommandLineInterface(osPriorityNormal,4096,nullptr,cli_thread_name);
   Thread ControllerInit(osPriorityHigh,4096,nullptr,cntrInit_thread_name);
+  Thread APFInit(osPriorityNormal,4096,nullptr,apfInit_thread_name);
+  Thread EKFInit(osPriorityNormal,4096,nullptr,ekfInit_thread_name);
 
 
   printf("\033[2J\033[1;1H"); // clear screen
@@ -118,67 +134,51 @@ int main()
   printf("Spawning threads...\n");
   print_lock.unlock();
 
-/* // not used
+  /* // not used
   SDStorage.start(massStorage);
   print_lock.lock();
   printf("%s thread started\n", sdcard_thread_name);
   SDStorage.join();
   printf("Mass storage initialized\n"); 
   print_lock.unlock();
-*/
+  */
 
-  SensorInit.start(sensInit);
-  print_lock.lock();
-  printf("%s thread started\n", sensInit_thread_name);
-  print_lock.unlock();
-
-  ThisThread::sleep_for(2s);
-
-  OutputPortInit.start(outportInit);
-  print_lock.lock();
-  printf("%s thread started\n", outportInit_thread_name);
-  print_lock.unlock();
-
-  ThisThread::sleep_for(2s);
-  
   /*
   Prognostic.start(prognostic); // unused without battery
-  printf("%s thread started\n", prognostic_thread_name);
   */
 
- ThisThread::sleep_for(2s);
+  /*
+  Navigator.start(navigator); // not used with APF
+  */
 
-  Navigator.start(navigator); // do nothing
-  print_lock.lock();
-  printf("%s thread started\n", navi_thread_name);
-  print_lock.unlock();
+  SensorInit.start(sensInit); // loop
+
+  ThisThread::sleep_for(1s);
+
+  OutputPortInit.start(outportInit); // loop
+
+  ThisThread::sleep_for(1s);
+
+  ControllerInit.start(cntrInit); // start another thread
+  ControllerInit.join();
+
+  ThisThread::sleep_for(1s);
+  
+  EKFInit.start(ekfInit); // start another thread
+  EKFInit.join();
+
+  ThisThread::sleep_for(1s);
+
+  APFInit.start(apfInit); // start another thread
+  APFInit.join();
 
   ThisThread::sleep_for(2s);
 
-  ControllerInit.start(cntrInit);
-  print_lock.lock();
-  printf("%s thread started\n", cntrInit_thread_name);
-  print_lock.unlock();
-
-  ThisThread::sleep_for(5s);
-  
-  /* not added
-  #if EKF_TASK
-  EKFInit.start(ekfInit);
-  printf("%s thread started\n", ekfInit_thread_name);
-  #endif
-
-  #if APF_TASK
-  APFInit.start(apfInit);
-  printf("%s thread started\n", apfInit_thread_name);
-  #endif
-  */
-
   #if CLI_ACTIVE
-  CommandLineInterface.start(cli);
   print_lock.lock();
   printf("Command line available\n");
   print_lock.unlock();
+  CommandLineInterface.start(cli); // loop (start others thread in some functions)
   #endif
 
   while(1) {

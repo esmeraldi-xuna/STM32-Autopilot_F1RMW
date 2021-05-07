@@ -1,11 +1,14 @@
 #include <mbed.h>
 #include <EthernetInterface.h>
 #include "global_vars.hpp"
-#include "mavlink/common/mavlink.h"
-
 #include "UDPPIL.hpp"
 
+
 #if PIL_MODE
+
+#if MAVLINK
+#include "mavlink/common/mavlink.h"
+
 
 static const char*          mbedIP       = "192.168.1.10";  //IP 
 static const char*          mbedMask     = "255.255.255.0";  // Mask
@@ -68,5 +71,7 @@ void UDPPIL()
             printf("Data sent!\n");
         }
 }
+
+#endif
 
 #endif

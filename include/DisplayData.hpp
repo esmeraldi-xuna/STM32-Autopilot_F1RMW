@@ -3,6 +3,7 @@
 
 #include "mbed.h"
 #include "PI_contr.h"
+#include "APF_conver.h"
 
 
 typedef struct data_type{
@@ -12,9 +13,14 @@ typedef struct data_type{
     }sensors;
 
     struct y{
-        ExtU_PI_contr_T PI_contr_U; 
-        ExtY_PI_contr_T PI_contr_Y; 
+        ExtU_PI_contr_T ctrl_U; 
+        ExtY_PI_contr_T ctrl_Y; 
     }controller;
+
+    struct r{
+        ExtU_APF_conver_T APF_U;
+        ExtY_APF_conver_T APF_Y;
+    }traj_planner;
 
     struct x{
         int motor1=0;

@@ -49,7 +49,7 @@ void outportInit()
     int count =0;
     while(1){
         // wait data from PI
-        sem_PI_PWM.acquire();
+        sem_ctrl_PWM.acquire();
 
         displayData_lock.lock();
         global_data->data.pwm.motor1=count;
