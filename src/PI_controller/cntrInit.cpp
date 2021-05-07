@@ -1,8 +1,7 @@
 #include <mbed.h>
+#include "Thread.h"
 #include "cntrInit.hpp"
 #include "rt_OneStep.hpp"
-#include <stddef.h>
-#include <stdio.h>              /* This ert_main.c example uses printf/fflush */
 #include "PI_contr.h"          /* Model's header file */
 #include "rtwtypes.h"
 #include "global_vars.hpp"
@@ -23,7 +22,7 @@ Thread Controller(osPriorityRealtime,CONTROLLER_STACK_SIZE,nullptr,Controller_th
 void cntrInit(void)
 {
     print_lock.lock();
-    printf("Start controller init thread ID: %d\n\r", ThisThread::get_id());
+    printf("Start controller init thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     led_lock.lock();
@@ -37,12 +36,12 @@ void cntrInit(void)
     
     ThisThread::sleep_for(2s);
     // Spawn controller task
-    // Controller.start(callback(rt_OneStep,PI_contr_M)); // now not used
+    Controller.start(callback(rt_OneStep,PI_contr_M));
     
     initLED = !initLED;
     led_lock.unlock();
 
     print_lock.lock();
-    printf("End controller init thread ID: %d\n\r", ThisThread::get_id());
+    printf("End controller init thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 }

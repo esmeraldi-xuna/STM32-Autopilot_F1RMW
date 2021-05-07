@@ -24,11 +24,23 @@ Timer timerNav;
 
 void navigator()
 {
-    
     timerNav.reset();
     timerNav.start();
     while(1)
     {
+        ////////////////////////////////////// for debug///////////////////////////////////////////////
+    
+        // wait data from sensors
+        sem_sens_nav.acquire();
+
+        // do something
+        ThisThread::sleep_for(100ms);
+
+        // new data available, allows PI to do one step
+        sem_nav_PI.release();
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+    
+
         // semUDPNav.acquire();
         // if(flagMavlink)
         // {

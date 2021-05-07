@@ -16,6 +16,7 @@
 
 extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
 
+extern Semaphore sem_nav_PI, sem_PI_PWM, sem_PWM_sens, sem_sens_nav, sem_sens_PI; 
 
 extern Mutex led_lock, print_lock, displayData_lock;
 
@@ -42,13 +43,14 @@ extern ExtY_PI_contr_T PI_contr_Y;     // External outputs
 
 /////////////////////////////////  communication   /////////////////////////////////////
 
+#if MAVLINK
 #include "mavlink/common/mavlink.h"
 //extern bool flagMavlink;
 
 extern mavlink_attitude_t att;
 extern mavlink_odometry_t odom;
 extern mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
-
+#endif
 
 
 /////////////////////////////////  global variables to display   /////////////////////////////////////

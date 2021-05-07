@@ -60,13 +60,22 @@ Timer timer;
 
 void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
 {
-  
-  // Start watchdog
-  Watchdog &watchdog = Watchdog::get_instance();
-  watchdog.start(500); //350
-  timer.start();
   while (1)
   {
+    ////////////////////////////////////// for debug///////////////////////////////////////////////
+    
+    // wait data from sensors and NAV
+    sem_sens_PI.acquire();
+    sem_nav_PI.acquire();
+
+    // do something
+    ThisThread::sleep_for(100ms);
+
+    // new data available, allows PWM to activate motor
+    sem_PI_PWM.release();
+    continue;
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    
     epoch = Kernel::Clock::now();
     // timer.reset();
     // static boolean_T OverrunFlag = false;
@@ -91,7 +100,7 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     /* Save FPU context here (if necessary) */
     /* Re-enable timer or interrupt here */
     /* Set model inputs here */
-    
+    #if MAVLINK
     // UNCOMMENT THIS TO USE MAVLINK MSGS
     PI_contr_U.vel_ref = sqrt(pow(setpointsTrajectoryPlanner.vx,2) + pow(setpointsTrajectoryPlanner.vy,2));
     PI_contr_U.px_goal = setpointsTrajectoryPlanner.x;
@@ -105,7 +114,7 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     PI_contr_U.px_odom = odom.x;
     printf("\033[1;1H");
     printf("vel ref: %f, vel odom: %f, odom x: %f, psi ref: %f\n", PI_contr_U.vel_ref, PI_contr_U.vel_odom, PI_contr_U.px_odom, PI_contr_U.psi_ref);
-    
+    #endif
     #if PIL_MODE
       semDecode.acquire(); 
     #endif
@@ -138,19 +147,9 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     // wdgTime = watchdog.get_timeout();
     // wdgTime = 0;
     // printf("\033[3;1Hwdg: %lu (timer: %d)",wdgTime,elapsed);
-    watchdog.kick();
+    //watchdog.kick();
     
     ThisThread::sleep_until(epoch+350ms); // 50ms is the step time!!
   }
-  
-//   /* Disable rt_OneStep() here */
-
-//   /* Terminate model */
-//   feedback_control_terminate(feedback_control_M);
+  return;  
 }
-
-/*
- * File trailer for generated code.
- *
- * [EOF]
- */

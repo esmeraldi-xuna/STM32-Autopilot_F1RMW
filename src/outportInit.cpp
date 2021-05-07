@@ -35,7 +35,7 @@ Event<void(void)> motorwriteEvent(&queuePWM,MotorWriteHandler);
 void outportInit()
 {
     print_lock.lock();
-    printf("Start outport thread ID: %d\n\r", ThisThread::get_id());
+    printf("Start outport thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     //servo1.calibrate(0.0005,90); // 0.0005 s from center (1.5ms) to max/min. The Servo::calibrate() method accepts as first input a value IN SECONDS.
@@ -45,11 +45,31 @@ void outportInit()
     ServoWriteEventSetup();
     MotorWriteEventSetup();
 
+    ////////////////////////////////////// for debug///////////////////////////////////////////////
+    int count =0;
+    while(1){
+        // wait data from PI
+        sem_PI_PWM.acquire();
+
+        displayData_lock.lock();
+        global_data->data.pwm.motor1=count;
+        global_data->data.pwm.motor2=count+1;
+        count += 5;
+        displayData_lock.unlock();
+
+        ThisThread::sleep_for(100ms);
+
+        // start new cycle from sensors
+        sem_PWM_sens.release();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
 
     // reach this point only when queue is stopped
     print_lock.lock();
-    printf("End outport thread ID: %d\n\r", ThisThread::get_id());
+    printf("End outport thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     return;

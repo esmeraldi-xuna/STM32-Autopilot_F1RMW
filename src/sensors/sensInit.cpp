@@ -17,6 +17,7 @@
 #include "sensInit.hpp"
 #include "global_vars.hpp"
 #include "commander.hpp"
+#include "DisplayData.hpp"
 
 // #include "massStorage.hpp"
 // #include "magCalibrate.hpp"
@@ -51,7 +52,7 @@ void sensInit()
     bool flag_AK8963_online = false, flag_AK8963_calibrated = false; 
 
     print_lock.lock();
-    printf("Start sensors thread ID: %d\n", ThisThread::get_id());
+    printf("Start sensors thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     // Accelerometer and gyroscope initialization
@@ -123,7 +124,7 @@ void sensInit()
         // setup events and post on queue
         postSensorEvent();
 
-        if(flag_MPU9250_calibrated && flag_MPU9250_calibrated){
+        if(flag_AK8963_calibrated && flag_MPU9250_calibrated){
             // all sensors online and calibrated
             main_commander->arm();
         }
@@ -143,8 +144,32 @@ void sensInit()
             main_commander->disarm(); 
     }
 
+    ////////////////////////////////////// for debug///////////////////////////////////////////////
+    int count=0;
+    while(1){
+        // wait write on PWM is completed
+        sem_PWM_sens.acquire();
+
+        // do something
+        
+
+        displayData_lock.lock();
+        global_data->data.sensors.altitude=count+1;
+        global_data->data.sensors.accel=count;
+        displayData_lock.unlock();
+
+        count += 3;
+        ThisThread::sleep_for(100ms);
+
+        // data available, allows NAV and PI to do one step
+        sem_sens_nav.release();
+        sem_sens_PI.release();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     print_lock.lock();
-    printf("End sensors thread ID: %d\n\r", ThisThread::get_id());
+    printf("End sensors thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     return;
@@ -161,6 +186,9 @@ void postSensorEvent(void)
 // TODO: add semaphore to protect the write-to-buffer operation in the following event!
 void read_sensors_eventHandler(void) // Event to copy sensor value from its register to extern variable
 {
+    // wait write on PWM is completed
+    sem_PWM_sens.acquire();
+
     // read data from MPU9250 and AK8963
     if(imu.readByte(MPU9250_ADDRESS,INT_STATUS & 0x01))     // if there are new data
     {
@@ -203,6 +231,10 @@ void read_sensors_eventHandler(void) // Event to copy sensor value from its regi
     // read data from sonar
     altitude = sonar.distance_analog();
     printf("Altitude: %.2f\n",altitude);
+
+    // data available, allows NAV and PI to do one step
+    sem_sens_nav.release();
+    sem_sens_PI.release();
 
     // for manual calibration, handled with interrupt (button)
     // irq.rise(calib_irq_handle);

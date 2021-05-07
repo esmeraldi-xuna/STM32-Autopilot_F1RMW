@@ -3,7 +3,8 @@
 #include "cli.hpp"
 #include "global_vars.hpp"
 
-void display_event(Mutex*);
+void display_loop(void);
+bool exit_flag = false;
 
 void display_once(void){
 
@@ -16,44 +17,41 @@ void display_once(void){
 }
 
 void display_repeat(void){
+    Thread cycle_th(osPriorityNormal, 4096, nullptr, "thread");
     
-    EventQueue *stats_queue = mbed_event_queue();
-    int id;
-    rtos::Mutex* lock_screen;
-    lock_screen = new Mutex();
+    exit_flag = false;
+    
+    cycle_th.start(display_loop);
 
-    id = stats_queue->call_every(1s, callback(display_event, lock_screen));
-
-    printf("\033[2J\033[1;1H"); // Clear terminal (2J) and set cursor to 1,1 (1;1H) --> CSI codes wikipedia!!!
-    
-    printf("user@stm32 >> display_r");
-    
     if (getchar()){ // press any button to exit
-        // stop queue and exit
-        stats_queue->cancel(id);
+        // exit
+        exit_flag=true;
+        cycle_th.join();
     }
     ThisThread::sleep_for(50ms);
 
-    // wait untill last print is ended
-    lock_screen->lock();
-    printf("\n");
-    lock_screen->unlock();
-    
     return;
 }
 
-void display_event(Mutex* lock_screen){
+void display_loop(void){
 
-    printf("\033[2;1H\033[5K"); // Set cursor to row 2 column 1 and clear that line
+    printf("\033[2J"); // clear screen
+    printf("\033[1;1H"); // Set cursor to row 1 column 1
+    printf("user@stm32 >> display_r");
 
-    // lock for synch end printing
-    lock_screen->lock();
+    while(!exit_flag){
     
-    // lock for global_data obj
-    displayData_lock.lock();
-    global_data->display();
-    displayData_lock.unlock();
-    lock_screen->unlock();
+        printf("\033[2;1H"); // Set cursor to row 2 column 1
+        
+        // lock for global_data obj
+        displayData_lock.lock();
+
+        global_data->display();
+        
+        displayData_lock.unlock();
+
+        ThisThread::sleep_for(1s);
+    }
 
     return;
 }

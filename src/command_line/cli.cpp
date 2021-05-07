@@ -141,5 +141,3 @@ __command string_to_command(char* input){
     }
     return cmd_invalid;
 }
-
-// TODO: add cases for soft reboot (NVIC_SystemReset()) and for displaying values 
