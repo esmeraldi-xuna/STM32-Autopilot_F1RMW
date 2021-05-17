@@ -23,6 +23,7 @@
 #include "navigator.hpp"
 #include "outportInit.hpp"
 #include "prognostic.hpp"
+#include "SD_log.hpp"
 #include "sensInit.hpp"
 
 using namespace events;
@@ -33,6 +34,7 @@ using namespace mbed;
 #define OVERRIDE_CONSOLE 0
 #define CLI_ACTIVE 1
 #define MAVLINK 0
+#define SD_MOUNTED 0
 
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
@@ -102,8 +104,8 @@ mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 int main() 
 {
   // defining threads
-  const char* sensInit_thread_name = "sensInit";
-  const char* outportInit_thread_name = "outportInit";
+  const char* sensInit_thread_name = "sens loop";
+  const char* outportInit_thread_name = "PWM loop";
   // const char* navi_thread_name = "Navigator";
   // const char* prognostic_thread_name = "Prognostic";
   const char* cli_thread_name = "cli";
@@ -119,7 +121,10 @@ int main()
   Thread ControllerInit(osPriorityHigh,4096,nullptr,cntrInit_thread_name);
   Thread APFInit(osPriorityNormal,4096,nullptr,apfInit_thread_name);
   Thread EKFInit(osPriorityNormal,4096,nullptr,ekfInit_thread_name);
-
+  
+  #if SD_MOUNTED
+  Thread SD_log(osPriorityNormal,4096,nullptr,"SD-log");
+  #endif
 
   printf("\033[2J\033[1;1H"); // clear screen
   set_time(0);
@@ -131,17 +136,12 @@ int main()
   print_lock.lock();
   printf("\n ====== Firmware is starting... ====== \n");
 
+  #if SD_MOUNTED
+  file_sys_init();
+  #endif
+
   printf("Spawning threads...\n");
   print_lock.unlock();
-
-  /* // not used
-  SDStorage.start(massStorage);
-  print_lock.lock();
-  printf("%s thread started\n", sdcard_thread_name);
-  SDStorage.join();
-  printf("Mass storage initialized\n"); 
-  print_lock.unlock();
-  */
 
   /*
   Prognostic.start(prognostic); // unused without battery
@@ -173,6 +173,10 @@ int main()
   APFInit.join();
 
   ThisThread::sleep_for(2s);
+
+  #if SD_MOUNTED
+  SD_log.start(SD_log_loop);
+  #endif
 
   #if CLI_ACTIVE
   print_lock.lock();

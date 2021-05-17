@@ -35,6 +35,8 @@ class DisplayData
     DisplayData(){};
 
     void display();
+
+    void write_on_SD(FILE*);
     
     data_t data;
 };
