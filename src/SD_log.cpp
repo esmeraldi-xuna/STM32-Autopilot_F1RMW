@@ -76,27 +76,30 @@ void file_sys_init(void){
 
 void SD_log_loop(void){
 
-    Kernel::Clock::time_point log_time;
-    std::chrono::milliseconds log_step = 500ms;
+  Kernel::Clock::time_point log_time;
+  std::chrono::milliseconds log_step = 500ms;
 
-    FILE* log_file = fopen("/fs/log.txt", "w+");
-    if (!log_file) {
-      print_lock.lock();
-      printf("Error opening log file\n");
-      print_lock.unlock();
-      return;
-    }
+  print_lock.lock();
+  printf("Start LOG_SD thread ID: %d\n", (int)ThisThread::get_id());
+  print_lock.unlock();
 
-    while (1)
-    {
-        log_time = Kernel::Clock::now();
-        
-        // wrinte on file
-        fprintf(log_file, "new line\n");
-        displayData_lock.lock();
-        global_data->write_on_SD(log_file);
-        displayData_lock.unlock();
+  FILE* log_file = fopen("/fs/log.txt", "w+");
+  if (!log_file) {
+    print_lock.lock();
+    printf("Error opening log file\n");
+    print_lock.unlock();
+    return;
+  }
 
-        ThisThread::sleep_until(log_time + log_step);
-    }
+  while (1)
+  {
+    log_time = Kernel::Clock::now();
+    
+    // wrinte on file
+    fprintf(log_file, "new line\n");
+    
+    global_data->write_on_SD(log_file);
+    
+    ThisThread::sleep_until(log_time + log_step);
+  }
 }

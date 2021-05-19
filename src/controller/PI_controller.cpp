@@ -29,20 +29,12 @@
 #include "math.h"
 #include "global_vars.hpp"
 #include "TankMotor.hpp"
-#include "rt_OneStep.hpp"
+#include "PI_controller.hpp"
 
 #if MAVLINK
 #include "mavlink/common/mavlink.h"
 #endif
 
-DigitalOut led(LED3,1);
-Kernel::Clock::time_point epoch;
-uint32_t wdgTime;
-// float pitch, roll;
-
-Timer timer;
-
-// TankMotor leftMotor(PTC10,PTB23,PTA2), rightMotor(PTC11,PTB9,PTA1);
 /*
  * Associating rt_OneStep with a real-time clock or interrupt service routine
  * is what makes the generated code "real-time".  The function rt_OneStep is
@@ -55,23 +47,68 @@ Timer timer;
  * real-time model and returns from rt_OneStep.
  */
 
-void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
+void PI_controller()
 {
+  print_lock.lock();
+  printf("Start PI_controller thread ID: %d\n", (int)ThisThread::get_id());
+  print_lock.unlock();
+  /*
+  DigitalOut led(LED3,1);
+  uint32_t wdgTime;
+  float pitch, roll;
+  Timer timer;
+  TankMotor leftMotor(PTC10,PTB23,PTA2), rightMotor(PTC11,PTB9,PTA1);
+  */
+
+  Kernel::Clock::time_point epoch;
+  std::chrono::milliseconds step = 350ms;
+
+  // init phase
+  RT_MODEL_PI_contr_T PI_contr_M_;
+  RT_MODEL_PI_contr_T *const PI_contr_M = &PI_contr_M_;// Real-time model 
+  DW_PI_contr_T PI_contr_DW;      // Observable states
+
+  // Defining global inputs/outputs of the controller 
+  ExtU_PI_contr_T PI_contr_U;     // inputs
+  ExtY_PI_contr_T PI_contr_Y;     // outputs
+
+  ExtY_APF_conver_T APF_Y;
+  ExtY_Kalman_filter_conv_T EKF_Y;
+
+  // Pack model data into RTM
+  PI_contr_M->dwork = &PI_contr_DW;
+
+  // Initialize model
+  PI_contr_initialize(PI_contr_M, &PI_contr_U, &PI_contr_Y);
+
+  // working phase
   while (1)
   {
-    ////////////////////////////////////// for debug///////////////////////////////////////////////
-    
-    // wait data from EKF and NAV
-    sem_EKF_NAV_ctrl.acquire();
-    sem_nav_ctrl.acquire();
+    epoch = Kernel::Clock::now();
 
-    // do something
+    // get data from EKF
+    EKF_Y = global_data->read_ekf();
+
+    // get data from NAV
+    APF_Y = global_data->read_nav();
+
+    // setup inputs
+    // PI_contr_U = .....
+
+    // do controller step
+    // PI_contr_step(PI_contr_M, &PI_contr_U, &PI_contr_Y);
     ThisThread::sleep_for(100ms);
 
-    // new data available, allows PWM to activate motor
-    sem_ctrl_PWM.release();
-    continue;
-    //////////////////////////////////////////////////////////////////////////////////////////////////
+    // write result on data structure
+    global_data->write_cntr(PI_contr_U, PI_contr_Y);
+
+    ThisThread::sleep_until(epoch+step);
+  }
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/*
     
     epoch = Kernel::Clock::now();
     // timer.reset();
@@ -87,12 +124,12 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     // }
 
     // OverrunFlag = true;
-    
+    /*
     if(led_lock.trylock())
     {
       led = !led;
       led_lock.unlock();
-    }
+    }*/
 
     /* Save FPU context here (if necessary) */
     /* Re-enable timer or interrupt here */
@@ -118,7 +155,7 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     // semNavContr.acquire();
 
     // /* Step the model for base rate */
-    PI_contr_step(PI_contr_M, &PI_contr_U, &PI_contr_Y);
+    // PI_contr_step(PI_contr_M, &PI_contr_U, &PI_contr_Y);
 
     // /* Get model outputs here */
 
@@ -145,8 +182,8 @@ void rt_OneStep(RT_MODEL_PI_contr_T *const PI_contr_M)
     // wdgTime = 0;
     // printf("\033[3;1Hwdg: %lu (timer: %d)",wdgTime,elapsed);
     //watchdog.kick();
-    
+    /*
     ThisThread::sleep_until(epoch+350ms); // 50ms is the step time!!
   }
   return;  
-}
+}*/

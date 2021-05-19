@@ -14,12 +14,7 @@
 
 /////////////////////////////////  synch obj   /////////////////////////////////////
 
-extern Semaphore semDecode, semEncode, semUDPNav, semNavContr, semContrPWM;
-
-extern Semaphore sem_nav_ctrl, sem_ctrl_PWM, sem_PWM_sens, sem_sens_EKF, sem_EKF_NAV_ctrl;
-
-
-extern Mutex led_lock, print_lock, displayData_lock;
+extern Mutex led_lock, print_lock;
 
 
 /////////////////////////////////  commander   /////////////////////////////////////
@@ -27,33 +22,6 @@ extern Mutex led_lock, print_lock, displayData_lock;
 // commander for arming/disaming
 #include "commander.hpp" 
 extern Commander* main_commander;
-
-
-/////////////////////////////////  controller   /////////////////////////////////////
-
-#include "PI_contr.h"
-/**
- * The I/O variables of the controller are used as extern since their name is the same if a Simulink project is used. 
- * This allows to keep the Firmware unchanged.
- */
-
-extern ExtU_PI_contr_T PI_contr_U;     // External inputs
-extern ExtY_PI_contr_T PI_contr_Y;     // External outputs
-
-
-/////////////////////////////////  EKF   /////////////////////////////////////
-#include "Kalman_filter_conv.h"
-
-extern ExtU_Kalman_filter_conv_T Kalman_filter_conv_U;// External inputs
-extern ExtY_Kalman_filter_conv_T Kalman_filter_conv_Y;// External outputs
-
-
-/////////////////////////////////  controller   /////////////////////////////////////
-#include "APF_conver.h"
-
-extern ExtU_APF_conver_T APF_conver_U; // External inputs
-extern ExtY_APF_conver_T APF_conver_Y; // External outputs
-
 
 /////////////////////////////////  communication   /////////////////////////////////////
 
@@ -68,9 +36,9 @@ extern mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
 
 /////////////////////////////////  global variables to display   /////////////////////////////////////
-#include "DisplayData.hpp"
+#include "GlobalData.hpp"
 
-extern DisplayData* global_data;
+extern GlobalData* global_data;
 
 #endif
 

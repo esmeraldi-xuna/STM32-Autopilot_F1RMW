@@ -12,7 +12,7 @@
 #include "Servo.h"
 #include "global_vars.hpp"
 #include "TankMotor.hpp"
-#include "outportInit.hpp"
+#include "PWM_port.hpp"
 #include "commander.hpp"
 
 
@@ -26,16 +26,14 @@ EventQueue queuePWM;
 Event<void(void)> servowriteEvent(&queuePWM,ServoWriteHandler);
 Event<void(void)> motorwriteEvent(&queuePWM,MotorWriteHandler);
 
-// CRITICAL Also in here I have to protect the read of the output of the controller algorithm with a semaphore/mutex !!!
-
 /** Initialization of the servomotor(calibration)
  *  set freq for PWM
  *  define paramsfor events, post them and dispatch queue.
  */
-void outportInit()
+void PWMport()
 {
     print_lock.lock();
-    printf("Start outport thread ID: %d\n", (int)ThisThread::get_id());
+    printf("Start PWM thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     //servo1.calibrate(0.0005,90); // 0.0005 s from center (1.5ms) to max/min. The Servo::calibrate() method accepts as first input a value IN SECONDS.
@@ -45,31 +43,11 @@ void outportInit()
     ServoWriteEventSetup();
     MotorWriteEventSetup();
 
-    ////////////////////////////////////// for debug///////////////////////////////////////////////
-    int count =0;
-    while(1){
-        // wait data from PI
-        sem_ctrl_PWM.acquire();
-
-        displayData_lock.lock();
-        global_data->data.pwm.motor1=count;
-        global_data->data.pwm.motor2=count+1;
-        count += 5;
-        displayData_lock.unlock();
-
-        ThisThread::sleep_for(100ms);
-
-        // start new cycle from sensors
-        sem_PWM_sens.release();
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
     queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
 
     // reach this point only when queue is stopped
     print_lock.lock();
-    printf("End outport thread ID: %d\n", (int)ThisThread::get_id());
+    printf("End PWM thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
     return;
@@ -96,11 +74,18 @@ void MotorWriteEventSetup(void)
 
 void ServoWriteHandler(void)
 {
-    /*
-    print_lock.lock();
-    printf("Servo event handler thread ID: %d\n\r", ThisThread::get_id());
-    print_lock.unlock();
-    */
+    ExtY_PI_contr_T PI_Y;
+
+    // get data from controller
+    PI_Y = global_data->read_cntr();
+
+    // put output on PWM only if armed
+    if (main_commander->is_armed()){
+        // output enabled
+        ThisThread::sleep_for(50ms);
+    }
+    global_data->write_pwm(/*put data here*/);
+
 
     // TODO add semaphore in here!
     /*if (pos <= 75.0/180)
@@ -124,26 +109,22 @@ void ServoWriteHandler(void)
     // servo1.write(pos);
     // printf("\033[1;1H");
     // printf("pos given to pwm port: %f\n",pos);
-    
-    /*
-    print_lock.lock();
-    if (main_commander->is_armed()){
-        // output enabled
-        printf("Wrinte on servo output port\n\r");
-    }else{
-        printf("Output disabled, drone DISARMED!!\n\r");
-    }
-    print_lock.unlock();
-    */
 }
 
 void MotorWriteHandler(void)
 {
-    /*
-    print_lock.lock();
-    printf("Motor event handler thread ID: %d\n\r", ThisThread::get_id());
-    print_lock.unlock();
-    */
+    ExtY_PI_contr_T PI_Y;
+
+    // get data from controller
+    PI_Y = global_data->read_cntr();
+
+    // put output on PWM only if armed
+    if (main_commander->is_armed()){
+        // output enabled
+        ThisThread::sleep_for(50ms);
+    }
+    global_data->write_pwm(/*put data here*/);
+
 
     // printf("\033[2;50Hout1");
     // semContrPWM.acquire();
@@ -174,15 +155,7 @@ void MotorWriteHandler(void)
 
     // leftMotor.Move(0);
     // rightMotor.Move(0);
-    
-    /*
-    print_lock.lock();
-    if (main_commander->is_armed()){
-        // output enabled
-        printf("Wrinte on motor output port\n\r");
-    }else{
-        printf("Output disabled, drone DISARMED!!\n\r");
-    }
-    print_lock.unlock();
-    */
 }
+
+
+

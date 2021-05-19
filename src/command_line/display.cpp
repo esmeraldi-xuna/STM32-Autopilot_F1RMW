@@ -8,11 +8,8 @@ bool exit_flag = false;
 
 void display_once(void){
 
-    // lock for global_data obj
-    displayData_lock.lock();
     global_data->display();
-    displayData_lock.unlock();
-
+    
     return;
 }
 
@@ -43,12 +40,7 @@ void display_loop(void){
     
         printf("\033[2;1H"); // Set cursor to row 2 column 1
         
-        // lock for global_data obj
-        displayData_lock.lock();
-
         global_data->display();
-        
-        displayData_lock.unlock();
 
         ThisThread::sleep_for(1s);
     }

@@ -1,7 +1,7 @@
-#ifndef SENSORS_INIT_H
-#define SENSORS_INIT_H
+#ifndef SENSORS_H
+#define SENSORS_H
 
-void sensInit(void);
+void sensors(void);
 
 // setup event
 void postSensorEvent(void);

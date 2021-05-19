@@ -1,8 +1,8 @@
-#ifndef OUT_INIT_H
-#define OUT_INIT_H
+#ifndef PWM_PORT_H
+#define PWM_PORT_H
 
 // Initialization of the servomotor
-void outportInit(void);
+void PWMport(void);
 
 // set params and post event
 void ServoWriteEventSetup(void);

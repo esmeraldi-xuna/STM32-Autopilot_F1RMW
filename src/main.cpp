@@ -13,18 +13,19 @@
 
 
 // edited
-#include "apfInit.hpp"
+#include "apf.hpp"
 #include "cli.hpp"
-#include "cntrInit.hpp"
 #include "commander.hpp"
-#include "DisplayData.hpp"
-#include "ekfInit.hpp"
+#include "ekf.hpp"
+#include "GlobalData.hpp"
 #include "global_vars.hpp"
 #include "navigator.hpp"
-#include "outportInit.hpp"
+#include "PI_controller.hpp"
 #include "prognostic.hpp"
+#include "PWM_port.hpp"
+#include "read_write_lock.hpp"
 #include "SD_log.hpp"
-#include "sensInit.hpp"
+#include "sensors.hpp"
 
 using namespace events;
 using namespace rtos;
@@ -51,38 +52,13 @@ FileHandle *mbed::mbed_override_console(int) {
 Commander* main_commander = new Commander();
 
 // struct for storing all data to be displayed
-DisplayData* global_data = new DisplayData();
+GlobalData* global_data = new GlobalData();
 
-// init syncro objs
-Semaphore semDecode(0), semEncode(0), semUDPNav(0), semNavContr(0), semContrPWM(0);
-
-/*
-sem_nav_ctrl        // NAV done -> start controller
-sem_ctrl_PWM        // controller done -> activate motor
-sem_PWM_sens        // motor activated -> start sensors. Starts with 1 to allow first sensors reading 
-sem_sens_EKF        // sensors data acquired -> send to EKF
-sem_EKF_NAV_ctrl    // EKF data available -> send to NAV and controller
-*/
-Semaphore sem_nav_ctrl(0), sem_ctrl_PWM(0), sem_PWM_sens(1), sem_sens_EKF(0), sem_EKF_NAV_ctrl(0);
+//  syncro objs
           
-Mutex led_lock, print_lock, displayData_lock;
+Mutex led_lock, print_lock;
 
-
-// Defining global inputs/outputs of the controller and his thread 
-ExtU_PI_contr_T PI_contr_U;     // External inputs
-ExtY_PI_contr_T PI_contr_Y;     // External outputs
-
-// EKF
-ExtU_Kalman_filter_conv_T Kalman_filter_conv_U;// External inputs
-ExtY_Kalman_filter_conv_T Kalman_filter_conv_Y;// External outputs
-
-
-// traj_planner (APF)
-ExtU_APF_conver_T APF_conver_U; // External inputs
-ExtY_APF_conver_T APF_conver_Y; // External outputs
-
-
-// init communication
+//  communication
 // bool flagMavlink = false;
 #if MAVLINK 
 #include "mavlink/common/mavlink.h"
@@ -104,23 +80,23 @@ mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 int main() 
 {
   // defining threads
-  const char* sensInit_thread_name = "sens loop";
-  const char* outportInit_thread_name = "PWM loop";
+  const char* sens_thread_name = "sens";
+  const char* PWMport_thread_name = "PWM";
   // const char* navi_thread_name = "Navigator";
   // const char* prognostic_thread_name = "Prognostic";
   const char* cli_thread_name = "cli";
-  const char* cntrInit_thread_name = "cntrInit";
-  const char* ekfInit_thread_name = "ekfInit";
-  const char* apfInit_thread_name = "apfInit";
+  const char* cntr_thread_name = "cntr";
+  const char* ekf_thread_name = "ekf";
+  const char* apf_thread_name = "apf";
 
-  Thread SensorInit(osPriorityNormal,4096,nullptr,sensInit_thread_name);
-  Thread OutputPortInit(osPriorityNormal,4096,nullptr,outportInit_thread_name);
+  Thread Sensor(osPriorityNormal,4096,nullptr,sens_thread_name);
+  Thread PWMPort(osPriorityNormal,4096,nullptr,PWMport_thread_name);
   // Thread Navigator(osPriorityNormal,4096,nullptr,navi_thread_name);
   // Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
   Thread CommandLineInterface(osPriorityNormal,4096,nullptr,cli_thread_name);
-  Thread ControllerInit(osPriorityHigh,4096,nullptr,cntrInit_thread_name);
-  Thread APFInit(osPriorityNormal,4096,nullptr,apfInit_thread_name);
-  Thread EKFInit(osPriorityNormal,4096,nullptr,ekfInit_thread_name);
+  Thread Controller(osPriorityNormal,4096,nullptr,cntr_thread_name);
+  Thread APF(osPriorityNormal,4096,nullptr,apf_thread_name);
+  Thread EKF(osPriorityNormal,4096,nullptr,ekf_thread_name);
   
   #if SD_MOUNTED
   Thread SD_log(osPriorityNormal,4096,nullptr,"SD-log");
@@ -137,7 +113,7 @@ int main()
   printf("\n ====== Firmware is starting... ====== \n");
 
   #if SD_MOUNTED
-  file_sys_init();
+  file_sys_();
   #endif
 
   printf("Spawning threads...\n");
@@ -151,28 +127,25 @@ int main()
   Navigator.start(navigator); // not used with APF
   */
 
-  SensorInit.start(sensInit); // loop
+  Sensor.start(sensors); // loop
 
-  ThisThread::sleep_for(1s);
+  ThisThread::sleep_for(500ms);
 
-  OutputPortInit.start(outportInit); // loop
+  PWMPort.start(PWMport); // loop
 
-  ThisThread::sleep_for(1s);
+  ThisThread::sleep_for(500ms);
 
-  ControllerInit.start(cntrInit); // start another thread
-  ControllerInit.join();
+  Controller.start(PI_controller); // loop
 
-  ThisThread::sleep_for(1s);
+  ThisThread::sleep_for(500ms);
   
-  EKFInit.start(ekfInit); // start another thread
-  EKFInit.join();
+  EKF.start(ekf); // loop
+
+  ThisThread::sleep_for(500ms);
+
+  APF.start(apf); // loop
 
   ThisThread::sleep_for(1s);
-
-  APFInit.start(apfInit); // start another thread
-  APFInit.join();
-
-  ThisThread::sleep_for(2s);
 
   #if SD_MOUNTED
   SD_log.start(SD_log_loop);

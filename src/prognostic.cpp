@@ -1,5 +1,4 @@
 #include <mbed.h>
-
 #include "prognostic.hpp"
 #include "global_vars.hpp"
 
@@ -15,6 +14,10 @@ DigitalOut controllerLedPrognosticThread(LED3,1);
 
 void prognostic()
 {
+    print_lock.lock();
+    printf("Start prognostic thread ID: %d\n", (int)ThisThread::get_id());
+    print_lock.unlock();
+
     while (1)
     {
         vout = voltagePin.read()*5;         // voltagePin returns a fraction of the board supply voltage - 5V in our case

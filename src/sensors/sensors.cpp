@@ -14,10 +14,9 @@
 #include "MPU9250.h"
 #include "SonarMaxBotix.h"
 
-#include "sensInit.hpp"
+#include "sensors.hpp"
 #include "global_vars.hpp"
 #include "commander.hpp"
-#include "DisplayData.hpp"
 
 // #include "massStorage.hpp"
 // #include "magCalibrate.hpp"
@@ -46,7 +45,7 @@ EventQueue queue;
 Event<void(void)> read_sensors_event(&queue, read_sensors_eventHandler);
 
 
-void sensInit()
+void sensors()
 {
     bool flag_MPU9250_online = false, flag_MPU9250_calibrated = false;
     bool flag_AK8963_online = false, flag_AK8963_calibrated = false; 
@@ -100,8 +99,8 @@ void sensInit()
         print_lock.unlock();
         flag_AK8963_online = true;    
 
-        imu.initAK8963(imu.magCalibration);
-        flag_MPU9250_calibrated = true; // ???????????
+        imu.initAK8963(imu.magCalibration); // is calibrated after this????
+        flag_MPU9250_calibrated = true; 
         
         imu.getMres(); // Get mag sensitivity
         imu.magbias[0] = +470.;
@@ -117,6 +116,16 @@ void sensInit()
         flag_AK8963_online = false;
         flag_AK8963_calibrated = false;
     }
+
+    ////////////////////////////////////// for debug///////////////////////////////////////////////
+    
+    flag_MPU9250_online = true;
+    flag_AK8963_online = true;
+
+    flag_AK8963_calibrated = false;
+    flag_MPU9250_calibrated = false;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Launch events if all sensors are online
     if (flag_MPU9250_online && flag_AK8963_online)
@@ -144,29 +153,6 @@ void sensInit()
             main_commander->disarm(); 
     }
 
-    ////////////////////////////////////// for debug///////////////////////////////////////////////
-    int count=0;
-    while(1){
-        // wait write on PWM is completed
-        sem_PWM_sens.acquire();
-
-        // do something
-        
-
-        displayData_lock.lock();
-        global_data->data.sensors.altitude=count+1;
-        global_data->data.sensors.accel=count;
-        displayData_lock.unlock();
-
-        count += 3;
-        ThisThread::sleep_for(100ms);
-
-        // data available, allows EKF to do one step
-        sem_sens_EKF.release();
-    }
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
     print_lock.lock();
     printf("End sensors thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
@@ -182,8 +168,8 @@ void postSensorEvent(void)
     read_sensors_event.post();
 }
 
-// TODO: add semaphore to protect the write-to-buffer operation in the following event!
-void read_sensors_eventHandler(void) // Event to copy sensor value from its register to extern variable
+// Event to copy sensor value from its register to extern variable
+void read_sensors_eventHandler(void) 
 {
     // read data from MPU9250 and AK8963
     if(imu.readByte(MPU9250_ADDRESS,INT_STATUS & 0x01))     // if there are new data
@@ -211,10 +197,6 @@ void read_sensors_eventHandler(void) // Event to copy sensor value from its regi
         imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
         imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
 
-
-        // how to pass data to other thread?????
-
-
         // Print data
         // printf("")
         // printf("roll: %.2f \t pitch: %.2f \t yaw: %.2f \t \n",imu.roll*180./PI,imu.pitch*180./PI, imu.yaw*180/PI);
@@ -226,7 +208,11 @@ void read_sensors_eventHandler(void) // Event to copy sensor value from its regi
 
     // read data from sonar
     altitude = sonar.distance_analog();
-    printf("Altitude: %.2f\n",altitude);
+    
+    // write data when all available
+    global_data->write_sensor(/*put data here*/);
+    
+    //printf("Altitude: %.2f\n",altitude);
 
     // for manual calibration, handled with interrupt (button)
     // irq.rise(calib_irq_handle);
