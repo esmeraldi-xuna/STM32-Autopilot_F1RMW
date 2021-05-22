@@ -9,13 +9,15 @@ class Read_Write_Lock {
         Read_Write_Lock(){};
 
         void read_lock(){
-            // wait untill lock is free ( using lock() ) and then unlock because multiple readings don't need exclusive access
-            this->lock.lock(); 
-            this->lock.unlock();
-            return; 
+            // if lock is locked (owner != 0) wait and then unlock (read is not blocking)
+            if ((int)this->lock.get_owner() != 0){
+                this->lock.lock();
+                this->lock.unlock();
+            } 
+            // else do nothing
         };
 
-        void read_unlock(){}; // do nothing read is not blocking
+        void read_unlock(){}; // do nothing, read is not blocking
         
         void write_lock(){this->lock.lock();}; // write is blocking
 
