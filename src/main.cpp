@@ -9,8 +9,8 @@
 
 // not edited
 #include <mbed.h>
+#include "BufferedSerial.h"
 #include "Thread.h"
-
 
 // edited
 #include "apf.hpp"
@@ -26,6 +26,7 @@
 #include "read_write_lock.hpp"
 #include "SD_log.hpp"
 #include "sensors.hpp"
+#include "mavlink_serial.hpp"
 
 using namespace events;
 using namespace rtos;
@@ -34,13 +35,12 @@ using namespace mbed;
 
 #define OVERRIDE_CONSOLE 0
 #define CLI_ACTIVE 1
-#define MAVLINK 0
 #define SD_MOUNTED 0
 
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
-  PinName pin_for_TX = //A0; to be defined
-  PinName pin_for_RX = //A1; to be defined
+  PinName pin_for_TX = D1;
+  PinName pin_for_RX = D0;
   int baud_rate = 115200;
 
   static BufferedSerial my_serial(pin_for_TX, pin_for_RX, baud_rate);
@@ -55,17 +55,7 @@ Commander* main_commander = new Commander();
 GlobalData* global_data = new GlobalData();
 
 //  syncro objs
-          
 Mutex led_lock, print_lock;
-
-//  communication
-// bool flagMavlink = false;
-#if MAVLINK 
-#include "mavlink/common/mavlink.h"
-mavlink_attitude_t att;
-mavlink_odometry_t odom;
-mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
-#endif
 
 #if PIL_MODE
   #include "UDPPIL.hpp"
@@ -79,6 +69,14 @@ mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
 int main() 
 {
+  //  communication
+  PinName pin_tx = D1, pin_rx = D0; 
+  #if OVERRIDE_CONSOLE
+    pin_tx = USBTX;
+    pin_rx = USBRX;
+  #endif
+  static BufferedSerial mavlink_serial_ch(pin_tx, pin_rx, 9600);
+
   // defining threads
   const char* sens_thread_name = "sens";
   const char* PWMport_thread_name = "PWM";
@@ -88,6 +86,8 @@ int main()
   const char* cntr_thread_name = "cntr";
   const char* ekf_thread_name = "ekf";
   const char* apf_thread_name = "apf";
+  const char* mavlink_RX_thread_name = "Mav_reciver";
+  const char* mavlink_TX_thread_name = "Mav_sender";
 
   Thread Sensor(osPriorityNormal,4096,nullptr,sens_thread_name);
   Thread PWMPort(osPriorityNormal,4096,nullptr,PWMport_thread_name);
@@ -97,6 +97,8 @@ int main()
   Thread Controller(osPriorityNormal,4096,nullptr,cntr_thread_name);
   Thread APF(osPriorityNormal,4096,nullptr,apf_thread_name);
   Thread EKF(osPriorityNormal,4096,nullptr,ekf_thread_name);
+  Thread mavlink_RX(osPriorityNormal,4096,nullptr,mavlink_RX_thread_name);
+  Thread mavlink_TX(osPriorityNormal,4096,nullptr,mavlink_TX_thread_name);
   
   #if SD_MOUNTED
   Thread SD_log(osPriorityNormal,4096,nullptr,"SD-log");
@@ -127,23 +129,27 @@ int main()
   Navigator.start(navigator); // not used with APF
   */
 
-  Sensor.start(sensors); // loop
+  mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
+
+  mavlink_TX.start(callback(mavlink_serial_TX, &mavlink_serial_ch));
+
+  Sensor.start(sensors);
 
   ThisThread::sleep_for(500ms);
 
-  PWMPort.start(PWMport); // loop
+  PWMPort.start(PWMport);
 
   ThisThread::sleep_for(500ms);
 
-  Controller.start(PI_controller); // loop
+  Controller.start(PI_controller);
 
   ThisThread::sleep_for(500ms);
   
-  EKF.start(ekf); // loop
+  EKF.start(ekf);
 
   ThisThread::sleep_for(500ms);
 
-  APF.start(apf); // loop
+  APF.start(apf);
 
   ThisThread::sleep_for(1s);
 

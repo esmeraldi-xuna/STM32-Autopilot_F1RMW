@@ -77,7 +77,7 @@ void ServoWriteHandler(void)
     ExtY_PI_contr_T PI_Y;
 
     // get data from controller
-    PI_Y = global_data->read_cntr();
+    PI_Y = global_data->read_cntr_Y();
 
     // put output on PWM only if armed
     if (main_commander->is_armed()){
@@ -113,17 +113,26 @@ void ServoWriteHandler(void)
 
 void MotorWriteHandler(void)
 {
+    struct_pwm_data pwm_output;
     ExtY_PI_contr_T PI_Y;
 
     // get data from controller
-    PI_Y = global_data->read_cntr();
+    PI_Y = global_data->read_cntr_Y();
+
+    // setup pwm_output
 
     // put output on PWM only if armed
     if (main_commander->is_armed()){
         // output enabled
+        /*
+        motor1 = pwm_output.motor1;
+        motor2 = pwm_output.motor2;
+        motor3 = pwm_output.motor3;
+        motor4 = pwm_output.motor4;
+        */
         ThisThread::sleep_for(50ms);
     }
-    global_data->write_pwm(/*put data here*/);
+    global_data->write_pwm(pwm_output);
 
 
     // printf("\033[2;50Hout1");

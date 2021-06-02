@@ -2,6 +2,8 @@
     "target_overrides": {
         "*": {
             "platform.all-stats-enabled": true,
+            "platform.minimal-printf-enable-floating-point": true,
+            "platform.minimal-printf-set-floating-point-max-decimals": 6,
             "target.features_add": ["STORAGE"],
             "target.components_add": ["SD"],
             "sd.SPI_MOSI": "D11",

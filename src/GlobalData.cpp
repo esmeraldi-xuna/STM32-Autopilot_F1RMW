@@ -6,13 +6,16 @@
 #include "Kalman_filter_conv.h"
 #include "read_write_lock.hpp"
 
-void GlobalData::display(){
+void GlobalData::display(){ 
 
     printf(GREEN("\n ----------- global data -----------------\n\n"));
 
     this->lock_sensor.read_lock();
     printf(RED("  SENSORS\n"));
-    printf("Altitude: %d\tAcceleration: %d\n\n", data.sensors.altitude, data.sensors.accel);
+    printf("Altitude: %.2f\tAcceleration: X: %.2f Y: %.2f Z: %.2f\n", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
+    printf("G: X: %.2f Y: %.2f Z: %.2f\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    printf("M: X: %.2f Y: %.2f Z: %.2f\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
+    printf("Rool: %.2f Pitch: %.2f Yaw: %.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
     this->lock_sensor.read_unlock();
 
     this->lock_cntr.read_lock();
@@ -39,7 +42,10 @@ void GlobalData::display(){
 void GlobalData::write_on_SD(FILE* out_file){
 
     this->lock_sensor.read_lock();
-    fprintf(out_file, "SENS: Alt: %d, Acc: %d; ", data.sensors.altitude, data.sensors.accel);
+    fprintf(out_file, "Altitude: %f Acceleration: X:%f Y:%f Z:%f", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
+    fprintf(out_file, "G: X:%f Y:%f Z:%f", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    fprintf(out_file, "M: X:%f Y:%f Z:%f", data.sensors.mx, data.sensors.my, data.sensors.mz);
+    fprintf(out_file, "Rool:%f Pitch:%f Yaw:%f", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
     this->lock_sensor.read_unlock();
 
     this->lock_cntr.read_lock();
@@ -57,39 +63,48 @@ void GlobalData::write_on_SD(FILE* out_file){
     return;
 }
 
-void GlobalData::read_sensor(){ // todo
+struct_sensors_data GlobalData::read_sensor(){
+    struct_sensors_data tmp;
     this->lock_sensor.read_lock();
-
+    tmp = this->data.sensors;
     this->lock_sensor.read_unlock();
-    return;
+    return tmp;
 };
 
-void GlobalData::write_sensor(){ // todo
+void GlobalData::write_sensor(struct_sensors_data data_in){
     this->lock_sensor.write_lock();
-
+    this->data.sensors = data_in;
     this->lock_sensor.write_unlock();
     return;
 };
 
-void GlobalData::read_pwm(){ // todo
+struct_pwm_data GlobalData::read_pwm(){
+    struct_pwm_data tmp;
     this->lock_pwm.read_lock();
-
+    tmp = this->data.pwm;
     this->lock_pwm.read_unlock();
-    return;
+    return tmp;
 };
 
-void GlobalData::write_pwm(){ // todo
+void GlobalData::write_pwm(struct_pwm_data data_in){
     this->lock_pwm.write_lock();
-
+    this->data.pwm = data_in;
     this->lock_pwm.write_unlock();
     return;
 };
 
-ExtY_Kalman_filter_conv_T GlobalData::read_ekf(){
+ExtY_Kalman_filter_conv_T GlobalData::read_ekf_Y(){
     ExtY_Kalman_filter_conv_T tmp;
-
     this->lock_ekf.read_lock();
     tmp = this->data.ekf.EKF_Y;
+    this->lock_ekf.read_unlock();
+    return tmp;
+};
+
+ExtU_Kalman_filter_conv_T GlobalData::read_ekf_U(){
+    ExtU_Kalman_filter_conv_T tmp;
+    this->lock_ekf.read_lock();
+    tmp = this->data.ekf.EKF_U;
     this->lock_ekf.read_unlock();
     return tmp;
 };
@@ -102,11 +117,18 @@ void GlobalData::write_ekf(ExtU_Kalman_filter_conv_T U, ExtY_Kalman_filter_conv_
     return;
 };
 
-ExtY_APF_conver_T GlobalData::read_nav(){
+ExtY_APF_conver_T GlobalData::read_nav_Y(){
     ExtY_APF_conver_T tmp;
-
     this->lock_nav.read_lock();
     tmp = this->data.traj_planner.APF_Y;
+    this->lock_nav.read_unlock();
+    return tmp;
+};
+
+ExtU_APF_conver_T GlobalData::read_nav_U(){
+    ExtU_APF_conver_T tmp;
+    this->lock_nav.read_lock();
+    tmp = this->data.traj_planner.APF_U;
     this->lock_nav.read_unlock();
     return tmp;
 };
@@ -119,11 +141,18 @@ void GlobalData::write_nav(ExtU_APF_conver_T U, ExtY_APF_conver_T Y){
     return;
 };
 
-ExtY_PI_contr_T GlobalData::read_cntr(){
+ExtY_PI_contr_T GlobalData::read_cntr_Y(){
     ExtY_PI_contr_T tmp;
-
     this->lock_cntr.read_lock();
     tmp = this->data.controller.ctrl_Y;
+    this->lock_cntr.read_unlock();
+    return tmp;
+};
+
+ExtU_PI_contr_T GlobalData::read_cntr_U(){
+    ExtU_PI_contr_T tmp;
+    this->lock_cntr.read_lock();
+    tmp = this->data.controller.ctrl_U;
     this->lock_cntr.read_unlock();
     return tmp;
 };

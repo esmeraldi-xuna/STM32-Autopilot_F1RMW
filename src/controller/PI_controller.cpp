@@ -87,16 +87,16 @@ void PI_controller()
     epoch = Kernel::Clock::now();
 
     // get data from EKF
-    EKF_Y = global_data->read_ekf();
+    EKF_Y = global_data->read_ekf_Y();
 
     // get data from NAV
-    APF_Y = global_data->read_nav();
+    APF_Y = global_data->read_nav_Y();
 
     // setup inputs
     // PI_contr_U = .....
 
     // do controller step
-    // PI_contr_step(PI_contr_M, &PI_contr_U, &PI_contr_Y);
+    PI_contr_step(PI_contr_M, &PI_contr_U, &PI_contr_Y);
     ThisThread::sleep_for(100ms);
 
     // write result on data structure

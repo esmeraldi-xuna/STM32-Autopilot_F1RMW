@@ -171,31 +171,33 @@ void postSensorEvent(void)
 // Event to copy sensor value from its register to extern variable
 void read_sensors_eventHandler(void) 
 {
+    struct_sensors_data data_in;
+
     // read data from MPU9250 and AK8963
     if(imu.readByte(MPU9250_ADDRESS,INT_STATUS & 0x01))     // if there are new data
     {
         // imu.deltat=timerSesnInt.read();
         imu.readAccelData(imu.accelCount);
-        imu.ax = ((float)imu.accelCount[0])*imu.aRes - imu.accelBias[0];
-        imu.ay = (float)imu.accelCount[1]*imu.aRes - imu.accelBias[1];
-        imu.az = (float)imu.accelCount[2]*imu.aRes - imu.accelBias[2];
+        data_in.ax = imu.ax = ((float)imu.accelCount[0])*imu.aRes - imu.accelBias[0];
+        data_in.ay = imu.ay = (float)imu.accelCount[1]*imu.aRes - imu.accelBias[1];
+        data_in.az = imu.az = (float)imu.accelCount[2]*imu.aRes - imu.accelBias[2];
 
         imu.readGyroData(imu.gyroCount);
-        imu.gx = (float)imu.gyroCount[0]*imu.gRes - imu.gyroBias[0];
-        imu.gy = (float)imu.gyroCount[1]*imu.gRes - imu.gyroBias[1];
-        imu.gz = (float)imu.gyroCount[2]*imu.gRes - imu.gyroBias[2];
+        data_in.gx = imu.gx = (float)imu.gyroCount[0]*imu.gRes - imu.gyroBias[0];
+        data_in.gy = imu.gy = (float)imu.gyroCount[1]*imu.gRes - imu.gyroBias[1];
+        data_in.gz = imu.gz = (float)imu.gyroCount[2]*imu.gRes - imu.gyroBias[2];
         
         imu.readMagData(imu.magCount);
-        imu.mx = (float)imu.magCount[0]*imu.magCalibration[0]*imu.mRes - imu.magbias[0];
-        imu.my = (float)imu.magCount[1]*imu.magCalibration[1]*imu.mRes - imu.magbias[1];
-        imu.mz = (float)imu.magCount[2]*imu.magCalibration[2]*imu.mRes - imu.magbias[2];
+        data_in.mx = imu.mx = (float)imu.magCount[0]*imu.magCalibration[0]*imu.mRes - imu.magbias[0];
+        data_in.my = imu.my = (float)imu.magCount[1]*imu.magCalibration[1]*imu.mRes - imu.magbias[1];
+        data_in.mz = imu.mz = (float)imu.magCount[2]*imu.magCalibration[2]*imu.mRes - imu.magbias[2];
 
         // imu.MadgwickQuaternionUpdate(imu.ax,imu.ay,imu.az,imu.gx*PI/180.0f,imu.gy*PI/180.0f,imu.gz*PI/180.0f,imu.mx,imu.my,imu.mz);
         // imu.quat2eul();
 
-        imu.pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
-        imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
-        imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
+        data_in.pitch = imu.pitch = atan2(imu.ax,sqrt(imu.ay*imu.ay + imu.az*imu.az));
+        data_in.roll = imu.roll = atan2(-imu.ay,sqrt(imu.ax*imu.ax + imu.az*imu.az));
+        data_in.yaw = imu.yaw = atan2(-imu.my*cos(imu.roll) - imu.mz*sin(imu.roll),imu.mx*cos(imu.pitch) + imu.my*sin(imu.pitch)*sin(imu.roll) - imu.mz*sin(imu.pitch)*cos(imu.roll));
 
         // Print data
         // printf("")
@@ -207,10 +209,10 @@ void read_sensors_eventHandler(void)
     }
 
     // read data from sonar
-    altitude = sonar.distance_analog();
+    data_in.altitude = altitude = sonar.distance_analog();
     
     // write data when all available
-    global_data->write_sensor(/*put data here*/);
+    global_data->write_sensor(data_in);
     
     //printf("Altitude: %.2f\n",altitude);
 

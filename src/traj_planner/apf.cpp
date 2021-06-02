@@ -38,13 +38,13 @@ void apf()
     epoch = Kernel::Clock::now();
 
     // get data from EKF
-    EKF_Y = global_data->read_ekf();
+    EKF_Y = global_data->read_ekf_Y();
 
     // setup inputs
     // APF_conver_U = ....
 
     // do step
-    // APF_conver_step(APF_conver_M, &APF_conver_U, &APF_conver_Y);
+    APF_conver_step(APF_conver_M, &APF_conver_U, &APF_conver_Y);
     ThisThread::sleep_for(100ms);
 
     // write result on data structure
