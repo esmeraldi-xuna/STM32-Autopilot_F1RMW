@@ -22,7 +22,7 @@
 #error "Stats not enabled"
 #endif
  
-#define MAX_THREAD_STATS    0x8
+#define MAX_THREAD_STATS    0x10
  
 int threadinfo()
 {
@@ -36,8 +36,11 @@ int threadinfo()
     // printf("                                                                                                                       \n");
     // printf("  ");
     // printf("\033[0m");
-    printf(" ID          Name                           State       Priority    Stack size  Stack space      ");
+    printf(" ID          Name                Count      State       Priority    Stack size  Stack space      ");
     // printf("\033[44m");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+    printf(GREEN("||"));
     printf("\033[118G");
     printf(GREEN("||\n"));
     // printf("\033[0m");
@@ -56,6 +59,8 @@ int threadinfo()
         printf(" 0x%x", stats[i].id);
         printf("\033[16G");
         printf("%s", stats[i].name);
+        printf("\033[36G");
+        printf("%d", i+1);
         printf("\033[47G");
         printf("%d", stats[i].state);
         printf("\033[59G");

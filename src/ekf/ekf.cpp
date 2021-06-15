@@ -54,3 +54,26 @@ void ekf()
     ThisThread::sleep_until(epoch+step);
   }
 }
+
+
+/*
+
+// External inputs (root inport signals with default storage)
+typedef struct {
+  real_T pos_l;                        // '<Root>/pos_l'
+  real_T pos_r;                        // '<Root>/pos_r'
+  real_T psi_mag;                      // '<Root>/psi_mag'
+  real_T ax;                           // '<Root>/ax'
+  real_T ay;                           // '<Root>/ay'
+} ExtU_Kalman_filter_conv_T;
+
+// External outputs (root outports fed by signals with default storage)
+typedef struct {
+  real_T X;                            // '<Root>/X'
+  real_T Y;                            // '<Root>/Y'
+  real_T psi;                          // '<Root>/psi '
+  real_T Vx;                           // '<Root>/Vx '
+  real_T Vy;                           // '<Root>/Vy '
+} ExtY_Kalman_filter_conv_T;
+
+*/

@@ -61,6 +61,7 @@ class GlobalData
     void display();
 
     void write_on_SD(FILE*);
+    void write_on_SD_as_csv(FILE*);
 
     struct_sensors_data read_sensor();
     void write_sensor(struct_sensors_data);

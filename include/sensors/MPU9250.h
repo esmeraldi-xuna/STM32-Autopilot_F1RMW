@@ -191,6 +191,7 @@ class MPU9250 {
          MPU9250(I2C *i2c);
          ~MPU9250();
          
+         void initAll(void); 
          void writeByte(uint8_t address, uint8_t subAddress, uint8_t data);
          char readByte(uint8_t address, uint8_t subAddress);
          void readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8_t * dest);

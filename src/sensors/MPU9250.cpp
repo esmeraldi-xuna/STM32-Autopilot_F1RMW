@@ -9,7 +9,10 @@
 MPU9250::MPU9250(PinName sda, PinName scl)
 {
     i2c_ = new I2C(sda, scl);
-    i2c_->frequency(400000);
+    i2c_->frequency(100000);
+    getAres();
+    getGres();
+    getMres();
 }
  
 //******************************************************************************
@@ -19,6 +22,13 @@ MPU9250::MPU9250(I2C *i2c):i2c_(i2c){}
 MPU9250::~MPU9250()
 {    
    delete i2c_;
+}
+
+void MPU9250::initAll(void) {
+  resetMPU9250();
+  calibrateMPU9250(this->gyroBias, this->accelBias);
+  initMPU9250();
+  initAK8963(this->magCalibration);
 }
  
 void MPU9250::writeByte(uint8_t address, uint8_t subAddress, uint8_t data)
@@ -466,7 +476,6 @@ void MPU9250::MPU9250SelfTest(float * destination) // Should return percent devi
    }
    
 }
- 
  
  
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"

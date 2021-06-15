@@ -57,6 +57,26 @@ void apf()
 
 
 /*
+
+// External inputs (root inport signals with default storage)
+typedef struct {
+    real_T X_est;                        // '<Root>/X_est'
+    real_T Y_est;                        // '<Root>/Y_est'
+    real_T psi_est;                      // '<Root>/psi_est'
+    real_T Vx_est;                       // '<Root>/Vx_est'
+} ExtU_APF_conver_T;
+
+// External outputs (root outports fed by signals with default storage)
+typedef struct {
+    real_T PWM_l;                        // '<Root>/PWM_l'
+    real_T PWM_r;                        // '<Root>/PWM_r'
+} ExtY_APF_conver_T;
+
+*/
+
+
+
+/*
     apf_timer.start();
     while (1)
     {

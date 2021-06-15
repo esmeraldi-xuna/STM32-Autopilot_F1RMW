@@ -107,6 +107,31 @@ void PI_controller()
 }
 
 
+/*
+
+// External inputs (root inport signals with default storage)
+typedef struct {
+  real_T vel_ref;                      // '<Root>/vel_ref'
+  real_T px_goal;                      // '<Root>/px_goal'
+  real_T psi_ref;                      // '<Root>/psi_ref'
+  real_T vel_odom;                     // '<Root>/vel_odom'
+  real_T psi_odom;                     // '<Root>/psi_odom'
+  real_T py_goal;                      // '<Root>/py_goal'
+  real_T px_start;                     // '<Root>/px_start'
+  real_T py_start;                     // '<Root>/py_start'
+  real_T py_odom;                      // '<Root>/py_odom'
+  real_T px_odom;                      // '<Root>/px_odom'
+} ExtU_PI_contr_T;
+
+// External outputs (root outports fed by signals with default storage)
+typedef struct {
+  real_T pwm_right;                    // '<Root>/pwm_right'
+  real_T pwm_left;                     // '<Root>/pwm_left'
+} ExtY_PI_contr_T;
+
+*/
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /*
     

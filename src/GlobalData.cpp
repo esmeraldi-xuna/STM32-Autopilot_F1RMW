@@ -28,9 +28,14 @@ void GlobalData::display(){
     printf(" APF_U\tAPF_Y\n\n");
     this->lock_nav.read_unlock();
 
+    this->lock_ekf.read_lock();
+    printf(RED("  EKF\n"));
+    printf(" EKF_U\tEKF_Y\n\n");
+    this->lock_ekf.read_unlock();
+
     this->lock_pwm.read_lock();
     printf(RED("  PWM:\n"));
-    printf("Motor 1: %d\tMotor 2: %d\n\n", data.pwm.motor1, data.pwm.motor2);
+    printf("Motor 1: %d\tMotor 2: %d\tMotor 3: %d\tMotor 4: %d\n\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
     this->lock_pwm.read_unlock();
 
     printf(GREEN("\n ---------------- end --------------------\n"));
@@ -56,8 +61,40 @@ void GlobalData::write_on_SD(FILE* out_file){
     fprintf(out_file, "TRJ_PL: APF_U, APF_Y; ");
     this->lock_nav.read_unlock();
 
+    this->lock_ekf.read_lock();
+    fprintf(out_file, "EKF: EKF_U, EKF_Y; ");
+    this->lock_ekf.read_unlock();
+
     this->lock_pwm.read_lock();
-    fprintf(out_file, "PWM: M1: %d, M2: %d.\n", data.pwm.motor1, data.pwm.motor2);
+    fprintf(out_file, "PWM: M1: %d, M2: %d, M3: %d, M4: %d.\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
+    this->lock_pwm.read_unlock();
+
+    return;
+}
+
+void GlobalData::write_on_SD_as_csv(FILE* out_file){
+
+    this->lock_sensor.read_lock();
+    fprintf(out_file, "%f,%f,%f,%f,", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
+    fprintf(out_file, "%f,%f,%f,", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    fprintf(out_file, "%f,%f,%f,", data.sensors.mx, data.sensors.my, data.sensors.mz);
+    fprintf(out_file, "%f,%f,%f,", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+    this->lock_sensor.read_unlock();
+
+    this->lock_cntr.read_lock();
+    fprintf(out_file, "Ctrl_U,Ctrl_Y,");
+    this->lock_cntr.read_unlock();
+
+    this->lock_nav.read_lock();
+    fprintf(out_file, "APF_U,APF_Y,");
+    this->lock_nav.read_unlock();
+
+    this->lock_ekf.read_lock();
+    fprintf(out_file, "EKF_U,EKF_Y,");
+    this->lock_ekf.read_unlock();
+
+    this->lock_pwm.read_lock();
+    fprintf(out_file, "%d,%d,%d,%d\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
     this->lock_pwm.read_unlock();
 
     return;

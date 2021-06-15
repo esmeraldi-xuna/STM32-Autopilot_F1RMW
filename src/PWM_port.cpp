@@ -74,6 +74,8 @@ void MotorWriteEventSetup(void)
 
 void ServoWriteHandler(void)
 {
+    struct_pwm_data pwm_data;
+
     ExtY_PI_contr_T PI_Y;
 
     // get data from controller
@@ -84,7 +86,7 @@ void ServoWriteHandler(void)
         // output enabled
         ThisThread::sleep_for(50ms);
     }
-    global_data->write_pwm(/*put data here*/);
+    global_data->write_pwm(pwm_data);
 
 
     // TODO add semaphore in here!
