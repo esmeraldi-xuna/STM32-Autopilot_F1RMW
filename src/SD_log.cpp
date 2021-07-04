@@ -21,7 +21,7 @@ void file_sys_init(void){
     int err = file_sys.reformat(&sd_block);
     printf("%s\n", (err ? "Fail :(" : "OK"));
     if (err) {
-        printf("error: reformat\n");
+      printf("error: reformat\n");
     }
   }
   else{
@@ -31,14 +31,14 @@ void file_sys_init(void){
     int err = file_sys.mount(&sd_block);
     printf("%s\n", (err ? "Fail :(" : "OK"));
     if (err) {
-        printf("No filesystem found, formatting... ");
-        fflush(stdout);
+      printf("No filesystem found, formatting... ");
+      fflush(stdout);
 
-        err = file_sys.reformat(&sd_block);
-        printf("%s\n", (err ? "Fail :(" : "OK"));
-        if (err) {
-            printf("error: reformat\n");
-        }
+      err = file_sys.reformat(&sd_block);
+      printf("%s\n", (err ? "Fail :(" : "OK"));
+      if (err) {
+        printf("error: reformat\n");
+      }
     }
   }
 
@@ -74,12 +74,13 @@ void SD_log_loop(void){
   // write first line for csv file
   fprintf(log_file, "TIME (ms), ACC, CNTRL, insert all fields separated by , ");
 
+  Kernel::Clock::time_point start_log = Kernel::Clock::now();
   while (1)
   {
     log_time = Kernel::Clock::now();
     
     // wrinte on file
-    fprintf(log_file, "%u,", Kernel::get_ms_count());
+    fprintf(log_file, "%lld,", (start_log - log_time).count());
     
     // global_data->write_on_SD(log_file);
     global_data->write_on_SD_as_csv(log_file);

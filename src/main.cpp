@@ -33,10 +33,6 @@ using namespace rtos;
 using namespace ThisThread;
 using namespace mbed;
 
-#define OVERRIDE_CONSOLE 0 /* if 0: console on usb, mavlink on D1, D0; if 1: console on D1, D0, mavlink on usb*/
-#define CLI_ACTIVE 1
-#define SD_MOUNTED 1
-
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
   PinName pin_for_TX = D1; // D5

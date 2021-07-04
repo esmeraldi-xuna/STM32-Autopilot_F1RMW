@@ -44,7 +44,9 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                         case MAVLINK_MSG_ID_HEARTBEAT:
                         main_commander->set_mav_comm_flag(true);
 
+                        print_lock.lock();
                         printf("recived heartbeat\n");
+                        print_lock.unlock();
 
                         flag = true;
 
@@ -54,7 +56,9 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                         
                         mavlink_msg_set_position_target_local_ned_decode(&msg, &setpointsTrajectoryPlanner);
 
+                        print_lock.lock();
                         printf("recived set_point: \n");
+                        print_lock.unlock();
 
                         break;
 
@@ -131,12 +135,15 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
         printf("Error sending data");
         print_lock.unlock();
     }  
+    print_lock.lock();
     if (sent != pck_len)
         printf("error sending\n");
     else
         printf("heartbeat sent correctly\n");
 
     printf("Waiting heartbeat...\n");
+    print_lock.unlock();
+
     while(flag == false)
         ThisThread::sleep_for(50ms);
 

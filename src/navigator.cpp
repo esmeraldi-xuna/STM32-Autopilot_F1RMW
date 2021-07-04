@@ -4,26 +4,27 @@
 
 #include "navigator.hpp"
 
-double V;
-
-struct Angle
-{
-    double roll;
-    double pitch;
-    double yaw;
-} angles;
-
-struct Quaternion {
-    double w, x, y, z;
-} q;
-
-float toll_pos = 0.05;
-float toll_ang = 2.5;
-
-Timer timerNav;
-
 void navigator()
 {
+    double V;
+
+    struct Angle
+    {
+        double roll;
+        double pitch;
+        double yaw;
+    } angles;
+
+    struct Quaternion {
+        double w, x, y, z;
+    } q;
+
+    float toll_pos = 0.05;
+    float toll_ang = 2.5;
+
+    Timer timerNav;
+
+
     timerNav.reset();
     timerNav.start();
     while(1)

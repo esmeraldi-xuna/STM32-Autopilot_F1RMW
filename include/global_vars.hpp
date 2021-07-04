@@ -9,6 +9,10 @@
 
 #include <mbed.h>
 
+#define OVERRIDE_CONSOLE 0 /* if 0: console on usb, mavlink on D1, D0; if 1: console on D1, D0, mavlink on usb*/
+#define CLI_ACTIVE 0
+#define SD_MOUNTED 1
+
 /////////////////////////////////  synch obj   /////////////////////////////////////
 
 extern Mutex led_lock, print_lock;
