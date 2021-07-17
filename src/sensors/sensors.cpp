@@ -59,15 +59,26 @@ void sensors()
 
     flag_MPU9250_online = init_accel_gyro();
 
+    if(flag_MPU9250_online){
+        main_commander->all_flags.flag_MPU9250_online = true;
+    }
+
     ThisThread::sleep_for(500ms);
 
     flag_AK8963_online = init_magn();
+
+    if(flag_AK8963_online){
+        main_commander->all_flags.flag_AK8963_online = true;
+    }
 
     ThisThread::sleep_for(500ms);
 
     ///////////////////////////////// BMP180 //////////////////////////////////////////////
 
     flag_BMP180_online = init_baro();
+    if(flag_BMP180_online){
+        main_commander->all_flags.flag_BMP180_online = true;
+    }
    
     ////////////////////////////////////// for debug///////////////////////////////////////////////
 /*   
@@ -120,8 +131,8 @@ void postSensorEvent(void)
 // Event to copy sensor value from its register to extern variable
 void read_sensors_eventHandler(void) 
 {
-    struct_sensors_data data_in;
-    float temp, tmp[3];
+    struct_sensors_data all_data;
+    float temp, tmp[3], mag_norm;
     int pressure;
 
     int16_t accelCount[3];  // Stores the 16-bit signed accelerometer sensor output
@@ -155,7 +166,9 @@ void read_sensors_eventHandler(void)
  
     // printf("Pressure = %d Pa\n", pressure);
 
-    // conversion to altitude... (TODO)
+    // conversion to altitude: NOT CORRECT
+    all_data.altitude = (1 - pow(pressure/101325, 0.19028)); // meters
+    // printf("Altitude = %d m\n", all_data.altitude);
 
     /////////////////////////// mpu9250 ///////////////////////////////////
 
@@ -163,15 +176,15 @@ void read_sensors_eventHandler(void)
         
         imu.readAccelData(accelCount);  // Read the x/y/z adc values   
         // Calculate the accleration value into actual g's
-        ax = (float)accelCount[0]*aRes - accelBias[0];  // get actual g value, this depends on scale being set
-        ay = (float)accelCount[1]*aRes - accelBias[1];   
-        az = (float)accelCount[2]*aRes - accelBias[2];  
+        all_data.ax = ax = (float)accelCount[0]*aRes - accelBias[0];  // get actual g value, this depends on scale being set
+        all_data.ay = ay = (float)accelCount[1]*aRes - accelBias[1];   
+        all_data.az = az = (float)accelCount[2]*aRes - accelBias[2];  
     
         imu.readGyroData(gyroCount);  // Read the x/y/z adc values
         // Calculate the gyro value into actual degrees per second
-        gx = (float)gyroCount[0]*gRes - gyroBias[0];  // get actual gyro value, this depends on scale being set
-        gy = (float)gyroCount[1]*gRes - gyroBias[1];  
-        gz = (float)gyroCount[2]*gRes - gyroBias[2];   
+        all_data.gx = gx = (float)gyroCount[0]*gRes - gyroBias[0];  // get actual gyro value, this depends on scale being set
+        all_data.gy = gy = (float)gyroCount[1]*gRes - gyroBias[1];  
+        all_data.gz = gz = (float)gyroCount[2]*gRes - gyroBias[2];   
     
         imu.readMagData(magCount);  // Read the x/y/z adc values  
         // use magCalibrate class to get correct value
@@ -180,10 +193,16 @@ void read_sensors_eventHandler(void)
         tmp[2]=(float)magCount[2];
 
         magCal.run(tmp, magValues);
-        
+
         mx = magValues[0];
         my = magValues[1];
         mz = magValues[2];
+
+        // normalize mag values
+        mag_norm = sqrt(mx*mx + my*my + mz*mz);
+        all_data.mx = mx = mx/mag_norm;
+        all_data.my = my = my/mag_norm;
+        all_data.mz = mz = mz/mag_norm;
     }
 
     // calculate roll, pitch, yaw from sensor data
@@ -191,10 +210,11 @@ void read_sensors_eventHandler(void)
     pitch = atan2(ax,sqrt(ay*ay + az*az));
     yaw = atan2(-my*cos(roll) - mz*sin(roll),mx*cos(pitch) + my*sin(pitch)*sin(roll) - mz*sin(pitch)*cos(roll));
 
-    // converting to degrees (?? add declination factor ??) 
+    // converting to degrees, add declination factor 
     roll  *= 180.0f / PI;
     pitch *= 180.0f / PI;
     yaw   *= 180.0f / PI;
+    yaw   -= 2.62f; // Declination at Torino, Italy is 2 degrees 37 minutes
 
 /*
     // calculate roll, pitch, yaw through quaternions (to review, not working)
@@ -210,9 +230,13 @@ void read_sensors_eventHandler(void)
     // converting to degrees, add declinations factor to yaw
     pitch *= 180.0f / PI;
     yaw   *= 180.0f / PI; 
-    yaw   -= 13.8f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
+    yaw   -= 2.62f; // Declination at Torino, Italy is 2 degrees 37 minutes
+    // yaw   -= 13.8f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
     roll  *= 180.0f / PI;
 */
+    all_data.roll = roll;
+    all_data.pitch = pitch;
+    all_data.yaw = yaw;
 
 
     /////////////////////////// print debug ///////////////////////////////////
@@ -229,7 +253,7 @@ void read_sensors_eventHandler(void)
     printf(" my = %f", my); 
     printf(" mz = %f  mG\n", mz); 
 
-    printf("Roll, Pitch, Yaw:\t%.3f,\t%.3f,\t%.3f\n", roll, pitch, yaw);
+    printf("Roll, Pitch, Yaw:\t\t%.3f,\t\t%.3f,\t\t%.3f\n", roll, pitch, yaw);
 */
     /////////////////////////////////////////////////////////////////////////////
 /*
@@ -238,7 +262,7 @@ void read_sensors_eventHandler(void)
     printf("Altitude: %.2f\n",altitude);
 */  
     // write data when all available
-    // global_data->write_sensor(data_in);
+    global_data->write_sensor(all_data);
 }
 
 int I2C_scan(void){
@@ -329,6 +353,7 @@ bool init_magn(){
     if (try_get_calibration_values(min_mag_extr, max_mag_extr)){
         mag_calibrated = true;
         flag_AK8963_calibrated = true;
+        main_commander->all_flags.flag_AK8963_calibrated = true;
         return true;
     }else{
         mag_calibrated = false;
@@ -354,6 +379,7 @@ bool init_magn(){
         print_lock.unlock();
 
         flag_AK8963_calibrated = true;
+        main_commander->all_flags.flag_AK8963_calibrated = true;
 
         magCal.getExtremes(min_mag_extr, max_mag_extr);
 

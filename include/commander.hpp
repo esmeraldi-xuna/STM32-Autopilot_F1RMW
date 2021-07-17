@@ -4,35 +4,40 @@
 #include "mbed.h"
 
 typedef enum {
-	COMMANDER_NOT_READY  = 0,
-	COMMANDER_READY      = 1,
-} commander_sates_t;
+	SYSTEM_WAKE_UP = 0,
+	SYSTEM_READY,
+    SYSTEM_ERROR
+} system_states_t;
 
 struct flags{
-    bool flag_sensor_online = false;
-    bool flag_sensor_calibrated = false;
-    bool flag_mav_comm = false;
+    bool flag_MPU9250_online = false;
+
+    bool flag_AK8963_online = false;
+    bool flag_AK8963_calibrated = false;
+
+    bool flag_BMP180_online = false;
+
+    bool flag_mavlink_communication = false;
 };
 
 class Commander
 {
     public:
         Commander();
+
+        struct flags all_flags;
+
+        system_states_t get_current_state() {return curr_state;};
+        int changeState(system_states_t new_state);
         
-        commander_sates_t get_current_state() {return curr_state;}
-        int changeState(commander_sates_t new_state);
-        
-        void arm();
-        void disarm() {flag_armed = false;};
+        bool arm();
+        bool disarm() {flag_armed = false; return true;};
 
         bool is_armed() {return flag_armed;};
 
-        void set_mav_comm_flag(bool);
-        
     private:
-        commander_sates_t curr_state;
+        system_states_t curr_state;
         bool flag_armed;
-        struct flags all_flags;
         rtos::Mutex lock_flags, lock_state;
 };
 

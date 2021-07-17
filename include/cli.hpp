@@ -13,6 +13,8 @@ enum __command
     cmd_help,
     cmd_display_once,
     cmd_display_repeat,
+    cmd_mag_calib,
+    cmd_arm_req,
     cmd_reset,
     cmd_invalid,
 };
@@ -36,6 +38,10 @@ int top(void);
 void display_once(void);
 
 void display_repeat(void);
+
+void start_magnetometer_calibration(void);
+
+void arm_request(void);
 
 void reset(void);
 

@@ -4,7 +4,7 @@
 #include "mavlink_serial.hpp"
 #include "mavlink/common/mavlink.h"
 
-bool flag = false;
+bool heartbeat_recived = false;
 
 void mavlink_serial_RX(BufferedSerial* serial_ch){
 
@@ -42,13 +42,15 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                     switch (msg.msgid)
                     {
                         case MAVLINK_MSG_ID_HEARTBEAT:
-                        main_commander->set_mav_comm_flag(true);
+                        main_commander->all_flags.flag_mavlink_communication = true;
 
+                        /*
                         print_lock.lock();
                         printf("recived heartbeat\n");
                         print_lock.unlock();
+                        */
 
-                        flag = true;
+                        heartbeat_recived = true;
 
                         break;
                         
@@ -113,7 +115,7 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
 
     struct_sensors_data sensor_data;
 
-    int sent = 0, pck_len = 0;
+    int sent = 0, pck_len = 0, cnt_for_heartbeat = 0;
 
     uint8_t SYS_ID = 8;  // for mavlink encoding
     uint8_t COMP_ID = 1;
@@ -123,10 +125,11 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     mavlink_attitude_t att;
     mavlink_heartbeat_t heart;
 
+
+    heartbeat_recived = false;
+
     mavlink_msg_heartbeat_encode(SYS_ID, COMP_ID, &msg, &heart);
     pck_len = mavlink_msg_to_send_buffer(out_data, &msg); 
-
-    flag = false;
 
     // sending heartbeat to start connection
     if((sent = serial_ch->write(out_data, pck_len)) < 0)
@@ -144,7 +147,8 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     printf("Waiting heartbeat...\n");
     print_lock.unlock();
 
-    while(flag == false)
+    // when heartbeat recived -> heartbeat_recived=true
+    while(heartbeat_recived == true)
         ThisThread::sleep_for(50ms);
 
     while(1)
@@ -196,6 +200,16 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
         else
             printf("sent attitude: %f, %f, %f\n", att.roll, att.pitch, att.yaw);
 */
+        // every 100 cycles send a heartbeat
+        if(cnt_for_heartbeat == 100){
+            cnt_for_heartbeat = 0;
+
+            mavlink_msg_heartbeat_encode(SYS_ID, COMP_ID, &msg, &heart);
+            mavlink_msg_to_send_buffer(out_data, &msg);
+            serial_ch->write(out_data, pck_len);
+        }
+
+        cnt_for_heartbeat++;
         ThisThread::sleep_until(epoch+step);
     }
 }

@@ -35,8 +35,8 @@ using namespace mbed;
 
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
-  PinName pin_for_TX = D1; // D5
-  PinName pin_for_RX = D0; // D4
+  PinName pin_for_TX = D1; 
+  PinName pin_for_RX = D0; 
   int baud_rate = 9600;
 
   static BufferedSerial my_serial(pin_for_TX, pin_for_RX, baud_rate);
@@ -66,9 +66,7 @@ Mutex led_lock, print_lock;
 int main() 
 {
   //  communication
-  PinName pin_tx = PA_9 /*D1*/, pin_rx = PA_10 /*D0*/;
-  
-  // PinName pin_tx = PB_6 /*D5*/, pin_rx = PB_7 /*D4*/;
+  PinName pin_tx =  PA_9 /*D1*/, pin_rx = PA_10 /*D0*/;
   
   #if OVERRIDE_CONSOLE
     pin_tx = USBTX;
@@ -104,7 +102,9 @@ int main()
   #endif
 
   printf("\033[2J\033[1;1H"); // clear screen
-  set_time(0);
+  // set_time(0);
+
+  main_commander->changeState(SYSTEM_WAKE_UP);
 
   #if PIL_MODE // Start UDP communtication only if in PIL mode!
     UDPIO_PIL.start(UDPPIL);
@@ -112,6 +112,16 @@ int main()
 
   print_lock.lock();
   printf("\n ====== Firmware is starting... ====== \n");
+
+  // try get date, not working
+  time_t seconds = time(NULL);
+
+  printf("\nTime as seconds since January 1, 1970 = %u\n", (unsigned int)seconds);
+
+  printf("\nTime as a basic string = %s\n", ctime(&seconds));
+
+  while(1);
+
 
   #if SD_MOUNTED
   file_sys_init();
@@ -162,6 +172,8 @@ int main()
   print_lock.unlock();
   CommandLineInterface.start(cli); // (start others thread in some functions)
   #endif
+
+  main_commander->changeState(SYSTEM_READY);
 
   while(1) {
     ThisThread::sleep_for(5s);

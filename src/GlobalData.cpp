@@ -12,10 +12,10 @@ void GlobalData::display(){
 
     this->lock_sensor.read_lock();
     printf(RED("  SENSORS\n"));
-    printf("Altitude: %.2f\tAcceleration: X: %.2f Y: %.2f Z: %.2f\n", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
-    printf("G: X: %.2f Y: %.2f Z: %.2f\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
-    printf("M: X: %.2f Y: %.2f Z: %.2f\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
-    printf("Rool: %.2f Pitch: %.2f Yaw: %.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+    printf("Altitude: %.2f\nAcceleration: X:\t%.2f Y:\t%.2f Z:\t%.2f\n", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
+    printf("Gyro: X:\t%.2f Y:\t%.2f Z:\t%.2f\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    printf("Mag: X:\t%.2f Y:\t%.2f Z:\t%.2f\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
+    printf("Roll:\t%.2f Pitch:\t%.2f Yaw:\t%.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
     this->lock_sensor.read_unlock();
 
     this->lock_cntr.read_lock();
@@ -35,7 +35,7 @@ void GlobalData::display(){
 
     this->lock_pwm.read_lock();
     printf(RED("  PWM:\n"));
-    printf("Motor 1: %d\tMotor 2: %d\tMotor 3: %d\tMotor 4: %d\n\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
+    printf("Motor 1:\t%dMotor 2:\t%d Motor 3:\t%d Motor 4:\t%d\n\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
     this->lock_pwm.read_unlock();
 
     printf(GREEN("\n ---------------- end --------------------\n"));
@@ -50,7 +50,7 @@ void GlobalData::write_on_SD(FILE* out_file){
     fprintf(out_file, "Altitude: %f Acceleration: X:%f Y:%f Z:%f", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
     fprintf(out_file, "G: X:%f Y:%f Z:%f", data.sensors.gx, data.sensors.gy, data.sensors.gz);
     fprintf(out_file, "M: X:%f Y:%f Z:%f", data.sensors.mx, data.sensors.my, data.sensors.mz);
-    fprintf(out_file, "Rool:%f Pitch:%f Yaw:%f", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+    fprintf(out_file, "Roll:%f Pitch:%f Yaw:%f", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
     this->lock_sensor.read_unlock();
 
     this->lock_cntr.read_lock();

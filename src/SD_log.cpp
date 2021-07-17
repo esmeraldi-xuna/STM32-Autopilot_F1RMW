@@ -72,7 +72,7 @@ void SD_log_loop(void){
   }
 
   // write first line for csv file
-  fprintf(log_file, "TIME (ms), ACC, CNTRL, insert all fields separated by , ");
+  fprintf(log_file, "TIME (ms), ALT, ACC, CNTRL, insert all fields separated by , ");
 
   Kernel::Clock::time_point start_log = Kernel::Clock::now();
   while (1)
@@ -80,7 +80,7 @@ void SD_log_loop(void){
     log_time = Kernel::Clock::now();
     
     // wrinte on file
-    fprintf(log_file, "%lld,", (start_log - log_time).count());
+    fprintf(log_file, "%lld,", (log_time - start_log).count());
     
     // global_data->write_on_SD(log_file);
     global_data->write_on_SD_as_csv(log_file);

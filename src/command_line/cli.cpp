@@ -78,6 +78,14 @@ void cli()
             display_repeat();
             break;
 
+        case cmd_mag_calib:
+            start_magnetometer_calibration();
+            break;
+
+        case cmd_arm_req:
+            arm_request();
+            break;
+
         case cmd_reset:
             reset();
             break;
@@ -139,5 +147,22 @@ __command string_to_command(char* input){
     if (strcmp(input, "display_r")== 0){
         return cmd_display_repeat;
     }
+    if (strcmp(input, "arm") == 0){
+        return cmd_arm_req;
+    }
+    if (strcmp(input, "calibration") == 0){
+        return cmd_mag_calib;
+    }
     return cmd_invalid;
+}
+
+void start_magnetometer_calibration(void){
+    printf("Calibration task\n");
+}
+
+void arm_request(void){
+    printf("Arming task\n");
+    if (main_commander->arm()){
+        printf("Arm ok!!!!");
+    }
 }

@@ -73,6 +73,22 @@ void help(void)
 
     printf(GREEN("|| "));
     printf("\033[7m");
+    printf("arm");
+    printf("\033[0m\033[15G");
+    printf("Try arming");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("calibration");
+    printf("\033[0m\033[15G");
+    printf("Start magnetometer calibration");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
     printf("reset");
     printf("\033[0m\033[15G");
     printf("Perform software reset");
