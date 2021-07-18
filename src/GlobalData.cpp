@@ -12,10 +12,17 @@ void GlobalData::display(){
 
     this->lock_sensor.read_lock();
     printf(RED("  SENSORS\n"));
-    printf("Altitude: %.2f\nAcceleration: X:\t%.2f Y:\t%.2f Z:\t%.2f\n", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
-    printf("Gyro: X:\t%.2f Y:\t%.2f Z:\t%.2f\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
-    printf("Mag: X:\t%.2f Y:\t%.2f Z:\t%.2f\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
-    printf("Roll:\t%.2f Pitch:\t%.2f Yaw:\t%.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+
+    printf("\033[2K"); // clear line
+    printf("Altitude:    %.2f\n", data.sensors.altitude);
+    printf("\033[2K"); // clear line
+    printf("Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n", data.sensors.ax, data.sensors.ay, data.sensors.az);
+    printf("\033[2K"); // clear line
+    printf("Gyro:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    printf("\033[2K"); // clear line
+    printf("Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
+    printf("\033[2K"); // clear line
+    printf("Roll:   %8.2f;    Pitch:   %8.2f;    Yaw:   %8.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
     this->lock_sensor.read_unlock();
 
     this->lock_cntr.read_lock();
@@ -35,7 +42,8 @@ void GlobalData::display(){
 
     this->lock_pwm.read_lock();
     printf(RED("  PWM:\n"));
-    printf("Motor 1:\t%dMotor 2:\t%d Motor 3:\t%d Motor 4:\t%d\n\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
+    printf("\033[2K"); // clear line
+    printf("Motor 1:    %d;   Motor 2:    %d;   Motor 3:    %d;   Motor 4:    %d\n\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
     this->lock_pwm.read_unlock();
 
     printf(GREEN("\n ---------------- end --------------------\n"));

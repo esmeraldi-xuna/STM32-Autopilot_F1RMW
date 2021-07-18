@@ -120,9 +120,6 @@ int main()
 
   printf("\nTime as a basic string = %s\n", ctime(&seconds));
 
-  while(1);
-
-
   #if SD_MOUNTED
   file_sys_init();
   #endif
