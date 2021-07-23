@@ -102,7 +102,6 @@ int main()
   #endif
 
   printf("\033[2J\033[1;1H"); // clear screen
-  // set_time(0);
 
   main_commander->changeState(SYSTEM_WAKE_UP);
 
@@ -112,13 +111,6 @@ int main()
 
   print_lock.lock();
   printf("\n ====== Firmware is starting... ====== \n");
-
-  // try get date, not working
-  time_t seconds = time(NULL);
-
-  printf("\nTime as seconds since January 1, 1970 = %u\n", (unsigned int)seconds);
-
-  printf("\nTime as a basic string = %s\n", ctime(&seconds));
 
   #if SD_MOUNTED
   file_sys_init();

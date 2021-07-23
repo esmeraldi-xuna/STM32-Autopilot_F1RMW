@@ -2,6 +2,7 @@
 #include "cli.hpp"
 #include "cli_appereance.hpp"
 #include "global_vars.hpp"
+#include "sensors.hpp"
 
 void cli()
 {
@@ -158,6 +159,7 @@ __command string_to_command(char* input){
 
 void start_magnetometer_calibration(void){
     printf("Calibration task\n");
+    mag_calibration();
 }
 
 void arm_request(void){

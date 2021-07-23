@@ -192,7 +192,9 @@ void read_sensors_eventHandler(void)
         tmp[1]=(float)magCount[1];
         tmp[2]=(float)magCount[2];
 
-        magCal.run(tmp, magValues);
+        if(flag_AK8963_calibrated){
+            magCal.run(tmp, magValues);
+        }
 
         mx = magValues[0];
         my = magValues[1];
@@ -325,7 +327,6 @@ bool init_accel_gyro(){
 
 bool init_magn(){
     
-    bool mag_calibrated = false;
     float min_mag_extr[3], max_mag_extr[3];
 
     uint8_t whoami = imu.readByte(AK8963_ADDRESS, WHO_AM_I_AK8963);
@@ -347,48 +348,22 @@ bool init_magn(){
     imu.getMres(); // Get magnetometer sensitivity
 
     
-    // calibration
     #if SD_MOUNTED // try get calibration value from SD
 
     if (try_get_calibration_values(min_mag_extr, max_mag_extr)){
-        mag_calibrated = true;
+        magCal.setExtremes(min_mag_extr, max_mag_extr);
         flag_AK8963_calibrated = true;
         main_commander->all_flags.flag_AK8963_calibrated = true;
         return true;
     }else{
-        mag_calibrated = false;
+        flag_AK8963_calibrated = false;
     }
 
     #else // no SD, do calibration
 
-    mag_calibrated = false;
+    flag_AK8963_calibrated = false;
 
     #endif
-
-    if (!mag_calibrated){ // do calibration
-
-        print_lock.lock();
-        printf("Strarting calibration!!\n"); // put something to stop, restart from user when ready for calibrating
-        
-        for (int i=0; i<CALIBRATION_STEPS_NEEDED; i++){
-            do_calibration_step();
-            ThisThread::sleep_for(MPU9250_FREQ);
-        }
-        
-        printf("Calibration done!!\n");
-        print_lock.unlock();
-
-        flag_AK8963_calibrated = true;
-        main_commander->all_flags.flag_AK8963_calibrated = true;
-
-        magCal.getExtremes(min_mag_extr, max_mag_extr);
-
-        #if SD_MOUNTED // save calibration data on SD
-
-            save_calib_values(min_mag_extr, max_mag_extr);
-
-        #endif
-    }
 
     return true;
 }
@@ -405,6 +380,35 @@ bool init_baro(){
         print_lock.unlock();
     }
     return true;
+}
+
+void mag_calibration(void){
+
+    float min_mag_extr[3], max_mag_extr[3];
+
+    print_lock.lock();
+    printf("Strarting calibration!!\n");
+    
+    for (int i=0; i<CALIBRATION_STEPS_NEEDED; i++){
+        do_calibration_step();
+        ThisThread::sleep_for(MPU9250_FREQ);
+    }
+    
+    printf("Calibration done!!\n");
+    print_lock.unlock();
+
+    flag_AK8963_calibrated = true;
+    main_commander->all_flags.flag_AK8963_calibrated = true;
+
+    magCal.getExtremes(min_mag_extr, max_mag_extr);
+
+    #if SD_MOUNTED // save calibration data on SD
+
+        save_calib_values(min_mag_extr, max_mag_extr);
+
+    #endif
+    
+
 }
 
 void do_calibration_step(){
@@ -489,8 +493,6 @@ bool try_get_calibration_values(float* min_ext, float* max_ext){
                     printf("Correct reading calibration file\n");
                     printf("read: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", min_ext[0], min_ext[1], min_ext[2], max_ext[0], max_ext[1], max_ext[2]);
                     print_lock.unlock();
-
-                    magCal.setExtremes(min_ext, max_ext);
                 }
                 fclose(f);
             }

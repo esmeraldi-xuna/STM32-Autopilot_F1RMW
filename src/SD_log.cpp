@@ -12,7 +12,12 @@ SDBlockDevice sd_block(MBED_CONF_SD_SPI_MOSI, MBED_CONF_SD_SPI_MISO, MBED_CONF_S
 // Filesystem
 FATFileSystem file_sys("sd");
 
+// Log file name
+char name[30];
+
 void file_sys_init(void){
+
+  int tmp = 0, max = 0;
 
   if (FORCE_REFORMAT){
     printf("Force formatting... ");
@@ -42,12 +47,42 @@ void file_sys_init(void){
     }
   }
 
-  FILE* f = fopen("sd/log.txt", "w+");
-  printf("%s\n", (!f ? "Fail :(" : "Created File for log"));
+  //////////////////////////////////////////////////////////////
+
+  // search highest value of log file
+  DIR *d = opendir("sd/");
+  if (!d) {
+      printf("error open dir\n");
+  }
+
+  while (true) {
+      struct dirent *e = readdir(d);
+      if (!e) {
+          break;
+      }
+      // printf("    %s\n", e->d_name);
+      sscanf(e->d_name, "log%d.txt", &tmp);
+      if (tmp > max)
+        max = tmp;
+  }
+
+  int err = closedir(d);
+  if (err < 0) {
+      printf("error close dir\n");
+  }
+
+  sprintf(name, "sd/log%d.txt", max+1);
+  //printf("%s\n", name);
+
+  /////////////////////////////////////////////////////////////
+
+  FILE* f = fopen(name, "w+");
+  printf("%s", (!f ? "Fail :(\n" : "Created File for log: "));
   if (!f) {
     printf("error file open\n");
   }
   else
+    printf("%s\n", name);
     fclose(f);
 
   return;
@@ -63,7 +98,7 @@ void SD_log_loop(void){
   printf("Start LOG_SD thread ID: %d\n", (int)ThisThread::get_id());
   print_lock.unlock();
 
-  FILE* log_file = fopen("sd/log.txt", "w+");
+  FILE* log_file = fopen(name, "w+");
   if (!log_file) {
     print_lock.lock();
     printf("Error opening log file\n");

@@ -21,4 +21,6 @@ bool init_magn();
 
 bool init_baro();
 
+void mag_calibration();
+
 #endif
