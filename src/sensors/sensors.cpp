@@ -141,7 +141,7 @@ void read_sensors_eventHandler(void)
     float magValues[3];     // Stores mag values after filtering
 
     /////////////////////////// BMP180 ///////////////////////////////////
-/*    
+    
     // reading temperature
     sens_bmp.startTemperature();
     ThisThread::sleep_for(5ms);     // Wait for conversion to complete
@@ -151,8 +151,8 @@ void read_sensors_eventHandler(void)
         printf("Error getting temperature\n");
         print_lock.unlock();
     }
-    printf("Temperature = %f C\n", temp);
-*/
+    // printf("Temperature = %f C\n", temp);
+
 
     // reading pressure
     sens_bmp.startPressure(BMP180::ULTRA_HIGH_RESOLUTION);
@@ -166,9 +166,11 @@ void read_sensors_eventHandler(void)
  
     // printf("Pressure = %d Pa\n", pressure);
 
-    // conversion to altitude: NOT CORRECT
-    all_data.altitude = (1 - pow(pressure/101325, 0.19028)); // meters
-    // printf("Altitude = %d m\n", all_data.altitude);
+    // conversion to altitude: alt = (R * T * ln(P0/P)) / g
+    pressure = pressure / 100; // hPa
+    float p0 = 1000; // sea level pressure (hPa)
+    all_data.altitude = (8314/9.81 * temp * log(p0/pressure)); // meters
+    printf("Altitude = %f m\n", all_data.altitude);
 
     /////////////////////////// mpu9250 ///////////////////////////////////
 
