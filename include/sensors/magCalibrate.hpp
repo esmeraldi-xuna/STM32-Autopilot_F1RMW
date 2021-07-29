@@ -67,13 +67,15 @@ public:
     * @param output, float array with length three which contains the output data (X-Y-Z). Scaled to have on average a length of one. 
     */    
     void run(float *input, float *output);
+
+    int measurementNumber;
     
 private:
     float x_min, x_max, y_min, y_max, z_min, z_max;
     
     float abs_gain, rel_gain;
     
-    int measurementNumber;
+    
     
     float sign(float input);
  
