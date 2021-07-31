@@ -7,6 +7,8 @@ void postSensorEvent(void);
 
 void read_sensors_eventHandler(void);
 
+void quat_upd_eventHandler(void);
+
 void do_calibration_step(void);
 
 bool try_get_calibration_values(float* min_ext, float* max_ext);

@@ -41,6 +41,7 @@ BMP180 sens_bmp(i2c_ch);
 
 EventQueue queue;
 Event<void(void)> read_sensors_event(&queue, read_sensors_eventHandler);
+Event<void(void)> update_quaternions(&queue, quat_upd_eventHandler);
 
 bool flag_MPU9250_online = false, flag_MPU9250_calibrated = false;
 bool flag_AK8963_online = false, flag_AK8963_calibrated = false; 
@@ -123,9 +124,13 @@ void sensors()
 void postSensorEvent(void)
 {
     // setup event params and post
-    read_sensors_event.period(MPU9250_FREQ + 100ms); 
+    read_sensors_event.period(MPU9250_FREQ); 
     read_sensors_event.delay(200ms);
     read_sensors_event.post();
+
+    update_quaternions.period(3ms);
+    update_quaternions.delay(3ms);
+    update_quaternions.post();
 }
 
 // Event to copy sensor value from its register to extern variable
@@ -167,10 +172,15 @@ void read_sensors_eventHandler(void)
     // printf("Pressure = %d Pa\n", pressure);
 
     // conversion to altitude: alt = (R * T * ln(P0/P)) / g
-    pressure = pressure / 100; // hPa
+    pressure = pressure / 100; // hPa or mbar
     float p0 = 1000; // sea level pressure (hPa)
     all_data.altitude = (8314/9.81 * temp * log(p0/pressure)); // meters
-    // printf("Altitude = %f m\n", all_data.altitude);
+    // printf("Altitude = %8.3f m\n", all_data.altitude);
+
+    float altitude = 145366.45f*(1.0f - powf(pressure/1013.25f, 0.190284f) );
+    // printf("Altitude = %f feet\n", altitude);
+    // printf("Altitude: %8.3f m\n", altitude/3.2828f);
+
 
     /////////////////////////// mpu9250 ///////////////////////////////////
 
@@ -203,34 +213,25 @@ void read_sensors_eventHandler(void)
         mz = magValues[2]*mRes;
 
         // normalize mag values
-        mag_norm = 1; // sqrt(mx*mx + my*my + mz*mz);
+        mag_norm = sqrt(mx*mx + my*my + mz*mz);
         all_data.mx = mx = mx/mag_norm;
         all_data.my = my = my/mag_norm;
         all_data.mz = mz = mz/mag_norm;
     }
-/*
+
     // calculate roll, pitch, yaw from sensor data
     roll = atan2(-ay,sqrt(ax*ax + az*az));
     pitch = atan2(ax,sqrt(ay*ay + az*az));
-    yaw = atan2(-my*cos(roll) - mz*sin(roll),mx*cos(pitch) + my*sin(pitch)*sin(roll) - mz*sin(pitch)*cos(roll));
+    float mag_x = mx*cos(pitch) + mz*sin(pitch);
+    float mag_y = mx*sin(roll)*sin(pitch) + my*cos(roll) - mz * sin(roll)*cos(pitch);
+    yaw = atan2(-mag_y,mag_x);
 
-    // converting to degrees, add declination factor 
-    roll  *= 180.0f / PI;
-    pitch *= 180.0f / PI;
-    yaw   *= 180.0f / PI;
-    yaw   -= 2.62f; // Declination at Torino, Italy is 2 degrees 37 minutes
-*/
 
-    // calculate roll, pitch, yaw through quaternions (to review, not working)
-    // Pass gyro rate as rad/s
-    imu.MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
-    // imu.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
- 
+    // calculate roll, pitch, yaw through quaternions
+    // yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
+    // pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+    // roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
 
-    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
-    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
-    
     // converting to degrees, add declinations factor to yaw
     pitch *= 180.0f / PI;
     yaw   *= 180.0f / PI; 
@@ -238,10 +239,10 @@ void read_sensors_eventHandler(void)
     // yaw   -= 13.8f; // Declination at Danville, California is 13 degrees 48 minutes and 47 seconds on 2014-04-04
     roll  *= 180.0f / PI;
 
+    // save data
     all_data.roll = roll;
     all_data.pitch = pitch;
     all_data.yaw = yaw;
-
 
     /////////////////////////// print debug ///////////////////////////////////
 /*
@@ -256,9 +257,10 @@ void read_sensors_eventHandler(void)
     printf("mx = %f", mx); 
     printf(" my = %f", my); 
     printf(" mz = %f  mG\n", mz); 
-*/
-    printf("Roll, Pitch, Yaw: %8.3f, %8.3f, %8.3f\n", roll, pitch, yaw);
 
+    if (flag_AK8963_calibrated)
+        printf("Roll, Pitch, Yaw: %8.3f, %8.3f, %8.3f\n", roll, pitch, yaw);
+*/
     /////////////////////////////////////////////////////////////////////////////
 /*
     // read data from sonar
@@ -267,6 +269,15 @@ void read_sensors_eventHandler(void)
 */  
     // write data when all available
     global_data->write_sensor(all_data);
+    return;
+}
+
+void quat_upd_eventHandler(void){
+
+    // Pass gyro rate as rad/s
+    // imu.MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
+    imu.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+    return;
 }
 
 int I2C_scan(void){
@@ -388,6 +399,7 @@ void mag_calibration(void){
 
     float min_mag_extr[3], max_mag_extr[3];
 
+    flag_AK8963_calibrated = false;
     magCal.measurementNumber = 0;
     print_lock.lock();
     printf("Strarting calibration!!\n");
