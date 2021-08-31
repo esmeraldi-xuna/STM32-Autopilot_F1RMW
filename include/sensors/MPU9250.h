@@ -220,7 +220,7 @@ float zeta = sqrt(3.0f / 4.0f) * GyroMeasDrift;  // compute zeta, the other free
 #define Ki 0.0f
 
 float pitch, yaw, roll;
-float deltat = 0.03f; //s                             // integration interval for both filter schemes
+float deltat = 0.003f; //s                             // integration interval for both filter schemes
 int lastUpdate = 0, firstUpdate = 0, Now = 0;    // used to calculate integration interval                               // used to calculate integration interval
 float q[4] = {1.0f, 0.0f, 0.0f, 0.0f};           // vector to hold quaternion
 float eInt[3] = {0.0f, 0.0f, 0.0f};              // vector to hold integral error for Mahony method

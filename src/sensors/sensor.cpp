@@ -220,17 +220,17 @@ void read_sensors_eventHandler(void)
     }
 
     // calculate roll, pitch, yaw from sensor data
-    roll = atan2(-ay,sqrt(ax*ax + az*az));
-    pitch = atan2(ax,sqrt(ay*ay + az*az));
-    float mag_x = mx*cos(pitch) + mz*sin(pitch);
-    float mag_y = mx*sin(roll)*sin(pitch) + my*cos(roll) - mz * sin(roll)*cos(pitch);
-    yaw = atan2(-mag_y,mag_x);
+    // roll = atan2(-ay,sqrt(ax*ax + az*az));
+    // pitch = atan2(ax,sqrt(ay*ay + az*az));
+    // float mag_x = mx*cos(pitch) + mz*sin(pitch);
+    // float mag_y = mx*sin(roll)*sin(pitch) + my*cos(roll) - mz * sin(roll)*cos(pitch);
+    // yaw = atan2(-mag_y,mag_x);
 
 
     // calculate roll, pitch, yaw through quaternions
-    // yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
-    // pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
-    // roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
+    yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
+    pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
+    roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
 
     // converting to degrees, add declinations factor to yaw
     pitch *= 180.0f / PI;
@@ -257,10 +257,10 @@ void read_sensors_eventHandler(void)
     printf("mx = %f", mx); 
     printf(" my = %f", my); 
     printf(" mz = %f  mG\n", mz); 
-
+*/
     if (flag_AK8963_calibrated)
         printf("Roll, Pitch, Yaw: %8.3f, %8.3f, %8.3f\n", roll, pitch, yaw);
-*/
+
     /////////////////////////////////////////////////////////////////////////////
 /*
     // read data from sonar
@@ -275,8 +275,8 @@ void read_sensors_eventHandler(void)
 void quat_upd_eventHandler(void){
 
     // Pass gyro rate as rad/s
-    // imu.MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, mx, my, mz);
-    imu.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+    imu.MahonyQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
+    // imu.MadgwickQuaternionUpdate(ax, ay, az, gx*PI/180.0f, gy*PI/180.0f, gz*PI/180.0f, my, mx, mz);
     return;
 }
 
