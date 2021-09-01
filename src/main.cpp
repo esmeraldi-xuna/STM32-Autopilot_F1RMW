@@ -24,6 +24,7 @@
 #include "prognostic.hpp"
 #include "PWM_port.hpp"
 #include "read_write_lock.hpp"
+#include "SBUS.h"
 #include "SD_log.hpp"
 #include "sensors.hpp"
 #include "mavlink_serial.hpp"
@@ -67,6 +68,9 @@ int main()
 {
   //  communication
   PinName pin_tx =  PA_9 /*D1*/, pin_rx = PA_10 /*D0*/;
+
+  // SBUS
+  PinName sbus_tx = D1, sbus_rx = D0; // TODO: find correct PINs
   
   #if OVERRIDE_CONSOLE
     pin_tx = USBTX;
@@ -162,10 +166,22 @@ int main()
   CommandLineInterface.start(cli); // (start others thread in some functions)
   #endif
 
+  if(sbus_init(sbus_tx, sbus_rx) != -1){
+    /*
+    print_lock.lock();
+    printf("SBUS ok\n");
+    print_lock.unlock();
+    */
+  }
+
   main_commander->changeState(SYSTEM_READY);
 
+  uint raw_sbus[25], sbus_channels_data[16];
+
   while(1) {
-    ThisThread::sleep_for(5s);
-    // printf("time: %lld", Kernel::get_ms_count());
+    if(sbus_get_data(raw_sbus)){
+      sbus_fill_channels(raw_sbus, sbus_channels_data);
+      sbus_use_channels_data(sbus_channels_data);
+    }
   }  
 }
