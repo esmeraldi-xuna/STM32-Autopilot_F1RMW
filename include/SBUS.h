@@ -13,10 +13,10 @@
 
 int sbus_init(PinName TX, PinName RX);
 
-int sbus_get_data(uint*);
+int sbus_get_data(unsigned int*);
 
-int sbus_fill_channels(uint*, uint*);
+int sbus_fill_channels(unsigned int*, unsigned int*);
 
-void sbus_use_channels_data(uint*);
+void sbus_use_channels_data(unsigned int*);
 
 #endif

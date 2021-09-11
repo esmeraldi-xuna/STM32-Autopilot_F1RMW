@@ -5,26 +5,36 @@
 
 Commander::Commander()
 {
-    curr_state=SYSTEM_ERROR;
+    this->set_all_flags_to_zero();
+};
+
+void Commander::set_all_flags_to_zero(){
+
     flag_armed = false;
 
-    all_flags.flag_AK8963_online = false;
-    all_flags.flag_AK8963_calibrated = false;
-    
-    all_flags.flag_BMP180_online = false;
-    
-    all_flags.flag_MPU9250_online = false;
+    // sensors state flags
+    all_flags.sensor.flag_AK8963_online = false;
+    all_flags.sensor.flag_AK8963_calibrated = false;
+    all_flags.sensor.flag_BMP180_online = false;
+    all_flags.sensor.flag_MPU9250_online = false;
+    all_flags.sensor.flag_mavlink_communication = false;
 
-    all_flags.flag_mavlink_communication = false;
-};
+    // motor state flags
+    all_flags.PWM.active = false;
+    all_flags.PWM.force_enable = false;
+    all_flags.PWM.force_disable = false;
+    all_flags.PWM.system_enable = false;
 
-int Commander::changeState(system_states_t new_state)
-{
-    this->lock_state.lock();
-    curr_state = new_state;
-    this->lock_state.unlock();
-    return 1;
-};
+    // controller state flags
+    all_flags.controller_active = false;
+    all_flags.ekf_active = false;
+    all_flags.apf_active = false;
+
+    // communications state flags
+    all_flags.comm_mavlink_rx = false;
+    all_flags.comm_mavlink_tx = false;
+    all_flags.comm_joystick = false;
+}
 
 bool Commander::arm(){
     bool can_arm = true;
@@ -32,7 +42,7 @@ bool Commander::arm(){
     this->lock_flags.lock();
     
     // check communication
-    if( all_flags.flag_mavlink_communication == false){
+    if( all_flags.sensor.flag_mavlink_communication == false){
         can_arm = false;
         print_lock.lock();
         printf("Arming error: communication\n");
@@ -40,28 +50,28 @@ bool Commander::arm(){
     }
 
     // check sensors
-    if( all_flags.flag_MPU9250_online == false){
+    if( all_flags.sensor.flag_MPU9250_online == false){
         can_arm = false;
         print_lock.lock();
         printf("Arming error: sensor MPU9250 not online\n");
         print_lock.lock();
     }
 
-    if( all_flags.flag_BMP180_online == false){
+    if( all_flags.sensor.flag_BMP180_online == false){
         can_arm = false;
         print_lock.lock();
         printf("Arming error: sensor BMP180 not online\n");
         print_lock.lock();
     }
 
-    if( all_flags.flag_AK8963_online == false){
+    if( all_flags.sensor.flag_AK8963_online == false){
         can_arm = false;
         print_lock.lock();
         printf("Arming error: sensor AK8963 not online\n");
         print_lock.lock();
     }
 
-    if( all_flags.flag_AK8963_calibrated == false){
+    if( all_flags.sensor.flag_AK8963_calibrated == false){
         can_arm = false;
         print_lock.lock();
         printf("Arming error: sensor AK9863 not calibrated\n");
@@ -80,4 +90,24 @@ bool Commander::arm(){
     }
     this->lock_flags.unlock();
     return this->flag_armed;
+}
+
+bool Commander::check_mandatory(){
+    return true;
+}
+
+bool Commander::check_startup(){
+    return true;
+}
+
+bool Commander::check_run_auto(){
+    return true;
+}
+
+bool Commander::check_run_manual(){
+    return true;
+}
+
+bool Commander::show_all_flags(){
+    return true;
 }

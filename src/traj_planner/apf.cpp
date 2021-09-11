@@ -32,6 +32,8 @@ void apf()
   // Initialize model
   APF_conver_initialize(APF_conver_M, &APF_conver_U, &APF_conver_Y);
 
+  main_commander->all_flags.apf_active = true;
+
   // working phase
   while (1)
   {

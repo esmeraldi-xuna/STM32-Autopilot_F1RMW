@@ -4,6 +4,7 @@
 
 // source code example: https://github.com/bolderflight/sbus
 
+#define uint unsigned int
 
 static BufferedSerial* sbus_channel;
 

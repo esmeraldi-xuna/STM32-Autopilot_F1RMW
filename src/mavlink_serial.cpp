@@ -42,7 +42,7 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                     switch (msg.msgid)
                     {
                         case MAVLINK_MSG_ID_HEARTBEAT:
-                        main_commander->all_flags.flag_mavlink_communication = true;
+                        main_commander->all_flags.comm_mavlink_rx = true;
 
                         /*
                         print_lock.lock();
@@ -151,6 +151,7 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     while(heartbeat_recived == true)
         ThisThread::sleep_for(50ms);
 
+    main_commander->all_flags.comm_mavlink_tx = true;
     while(1)
     {
         epoch = Kernel::Clock::now();

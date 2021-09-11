@@ -43,6 +43,8 @@ void PWMport()
     ServoWriteEventSetup();
     MotorWriteEventSetup();
 
+    main_commander->all_flags.PWM.active = true;
+
     queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
 
     // reach this point only when queue is stopped
