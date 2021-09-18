@@ -13,8 +13,6 @@ struct flags{
         bool flag_AK8963_calibrated = false;
 
         bool flag_BMP180_online = false;
-
-        bool flag_mavlink_communication = false;
     } sensor;
 
     // motor state flags
@@ -55,12 +53,18 @@ class Commander
         bool check_run_auto();
         bool check_run_manual();
         
+        void set_p_to_FSM_state(FSM_STATES*);
+        FSM_STATES get_main_FMS_state();
         bool show_all_flags();
+
+        void force_PWM_disable();
+        void force_PWM_enable(); 
 
     private:
         //system_states_t curr_state;
         bool flag_armed;
         rtos::Mutex lock_flags, lock_state;
+        FSM_STATES* p_main_FSM_state;
 };
 
 #endif

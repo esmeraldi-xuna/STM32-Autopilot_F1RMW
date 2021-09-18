@@ -17,7 +17,6 @@ void Commander::set_all_flags_to_zero(){
     all_flags.sensor.flag_AK8963_calibrated = false;
     all_flags.sensor.flag_BMP180_online = false;
     all_flags.sensor.flag_MPU9250_online = false;
-    all_flags.sensor.flag_mavlink_communication = false;
 
     // motor state flags
     all_flags.PWM.active = false;
@@ -39,13 +38,35 @@ void Commander::set_all_flags_to_zero(){
 bool Commander::arm(){
     bool can_arm = true;
 
+    if(all_flags.PWM.force_disable){
+
+        print_lock.lock();
+        printf("Arming error: PWM force disable == TRUE\n");
+        print_lock.lock();
+        return false;
+    }
+
     this->lock_flags.lock();
     
     // check communication
-    if( all_flags.sensor.flag_mavlink_communication == false){
+    if( all_flags.comm_mavlink_rx == false){
         can_arm = false;
         print_lock.lock();
-        printf("Arming error: communication\n");
+        printf("Arming error: communication MAV rx\n");
+        print_lock.lock();
+    }
+
+    if( all_flags.comm_mavlink_tx == false){
+        can_arm = false;
+        print_lock.lock();
+        printf("Arming error: communication MAV tx\n");
+        print_lock.lock();
+    }
+
+    if( all_flags.comm_joystick == false){
+        can_arm = false;
+        print_lock.lock();
+        printf("Arming error: communication JOY\n");
         print_lock.lock();
     }
 
@@ -92,22 +113,119 @@ bool Commander::arm(){
     return this->flag_armed;
 }
 
+void Commander::set_p_to_FSM_state(FSM_STATES* pointer_to_main_state){
+    p_main_FSM_state = pointer_to_main_state;
+}
+
+FSM_STATES Commander::get_main_FMS_state(){
+    return (*p_main_FSM_state);    
+}
+
 bool Commander::check_mandatory(){
-    return true;
+
+    bool all_ok = true;
+
+    // check sensors
+    if(!all_flags.sensor.flag_MPU9250_online)
+        all_ok = false;
+
+    if(!all_flags.sensor.flag_AK8963_online)
+        all_ok = false;
+
+    if(!all_flags.sensor.flag_BMP180_online)
+        all_ok = false;
+
+    
+    // check joystick communication
+    if(!all_flags.comm_joystick)
+        all_ok = false;
+
+    return all_ok;
 }
 
 bool Commander::check_startup(){
-    return true;
+    
+    bool all_ok = true;
+
+    // check mavlink
+    if(!all_flags.comm_mavlink_rx)
+        all_ok = false;
+
+    if(!all_flags.comm_mavlink_tx)
+        all_ok = false;
+
+    // check controller
+    if(!all_flags.controller_active)
+        all_ok = false;
+
+    if(!all_flags.ekf_active)
+        all_ok = false;
+    
+    if(!all_flags.apf_active)
+        all_ok = false;
+
+    // check pwm thread
+    if(!all_flags.PWM.active)
+        all_ok = false;
+
+    return all_ok;
 }
 
 bool Commander::check_run_auto(){
-    return true;
+    
+    bool all_ok = true;
+
+    // check mavlink
+    if(!all_flags.comm_mavlink_rx)
+        all_ok = false;
+
+    if(!all_flags.comm_mavlink_tx)
+        all_ok = false;
+
+    // check controller
+    if(!all_flags.controller_active)
+        all_ok = false;
+
+    if(!all_flags.ekf_active)
+        all_ok = false;
+    
+    if(!all_flags.apf_active)
+        all_ok = false;
+
+    // check pwm thread
+    if(!all_flags.PWM.active)
+        all_ok = false;
+
+    return all_ok;
 }
 
 bool Commander::check_run_manual(){
-    return true;
+    
+    bool all_ok = true;
+
+    // check joystick communication
+    if(!all_flags.comm_joystick)
+        all_ok = false;
+
+    // check pwm thread
+    if(!all_flags.PWM.active)
+        all_ok = false;
+
+    return all_ok;
 }
+
+void Commander::force_PWM_disable(){
+    all_flags.PWM.force_enable = false;
+    all_flags.PWM.force_disable = true;
+}
+
+void Commander::force_PWM_enable(){
+    all_flags.PWM.force_disable = false;
+    all_flags.PWM.force_enable = true;
+} 
 
 bool Commander::show_all_flags(){
     return true;
 }
+
+

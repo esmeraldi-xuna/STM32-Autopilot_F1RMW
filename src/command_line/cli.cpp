@@ -26,77 +26,82 @@ void cli()
     // console ready, start getting input
     while (1)
     {
-        ThisThread::sleep_for(100ms);
-        print_lock.lock();
-        printf("\n%s",prompt);
-        print_lock.unlock();
-        ThisThread::sleep_for(100ms);
-        
-        // get user input
-        handle_input(cliBuffer);
+        if(main_commander->get_main_FMS_state() == sys_safe){
+            ThisThread::sleep_for(100ms);
+            print_lock.lock();
+            printf("\n%s",prompt);
+            print_lock.unlock();
+            ThisThread::sleep_for(100ms);
+            
+            // get user input
+            handle_input(cliBuffer);
 
-        // debug printf
-        /*
-        print_lock.lock();
-        printf("\nread: %s\n", cliBuffer);
-        print_lock.unlock();
-        */
+            // debug printf
+            /*
+            print_lock.lock();
+            printf("\nread: %s\n", cliBuffer);
+            print_lock.unlock();
+            */
 
-        // get command
-        command = string_to_command(cliBuffer);
+            // get command
+            command = string_to_command(cliBuffer);
 
-        print_lock.lock();
-        switch (command)
-        {
-        case cmd_sys_info:
-            sysinfo();
-            break;
+            print_lock.lock();
+            switch (command)
+            {
+            case cmd_sys_info:
+                sysinfo();
+                break;
 
-        case cmd_thread_info:
-            threadinfo();
-            break;
+            case cmd_thread_info:
+                threadinfo();
+                break;
 
-        case cmd_return:
-            break;
+            case cmd_return:
+                break;
 
-        case cmd_clear:
-            printf("\033[2J\033[1;1H");
-            break;
+            case cmd_clear:
+                printf("\033[2J\033[1;1H");
+                break;
 
-        case cmd_help:
-            help();
-            break;
+            case cmd_help:
+                help();
+                break;
 
-        case cmd_top:
-            top();
-            break;
+            case cmd_top:
+                top();
+                break;
 
-        case cmd_display_once:
-            display_once();
-            break;
+            case cmd_display_once:
+                display_once();
+                break;
 
-        case cmd_display_repeat:
-            display_repeat();
-            break;
+            case cmd_display_repeat:
+                display_repeat();
+                break;
 
-        case cmd_mag_calib:
-            start_magnetometer_calibration();
-            break;
+            case cmd_mag_calib:
+                start_magnetometer_calibration();
+                break;
 
-        case cmd_arm_req:
-            arm_request();
-            break;
+            case cmd_arm_req:
+                arm_request();
+                break;
 
-        case cmd_reset:
-            reset();
-            break;
+            case cmd_reset:
+                reset();
+                break;
 
-        case cmd_invalid:
-        default:
-            printf(RED("Type a valid command\n"));
-            break;
+            case cmd_invalid:
+            default:
+                printf(RED("Type a valid command\n"));
+                break;
+            }
+            print_lock.unlock();
         }
-        print_lock.unlock();
+        else{
+            ThisThread::sleep_for(100ms);
+        }
     }
 }
 

@@ -34,15 +34,6 @@ using namespace rtos;
 using namespace ThisThread;
 using namespace mbed;
 
-typedef enum {
-    sys_init = 0,
-    sys_startup,
-    sys_fail,
-    sys_safe,
-    sys_run_auto,
-    sys_run_manual
-}FSM_STATES;
-
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
     PinName pin_for_TX = D1; 
@@ -201,6 +192,7 @@ int main_new(){
 
     // program starts here
     FSM_STATES active_state = sys_init;
+    main_commander->set_p_to_FSM_state(&active_state);
 
 
     // variables declaration
@@ -252,6 +244,12 @@ int main_new(){
     {
         switch (active_state){
             case sys_init:{
+                // force PWM disabled untill RUN states
+                main_commander->force_PWM_disable();
+
+                // start CLI thred but show it only in safe state
+                CommandLineInterface.start(cli);
+
                 // start sensors
                 Sensor.start(sensors);
 
@@ -305,31 +303,114 @@ int main_new(){
 
             case sys_safe:{
                 // safe state: PWM disabled, CLI active only here
+                main_commander->force_PWM_disable();
 
                 // use CLI or joystick to enter in a run mode
+                unsigned int raw_sbus[25], sbus_channels_data[16], new_state = 0;
+
+                while(new_state == 0) {
+                    if(sbus_get_data(raw_sbus)){
+                        sbus_fill_channels(raw_sbus, sbus_channels_data);
+                        sbus_use_channels_data(sbus_channels_data);
+
+                        // how to get command to switch state? (TODO define which command)
+                        if(sbus_channels_data[0] == 1000){
+                            new_state = 1;
+                            active_state = sys_run_manual;
+                        }
+                        if(sbus_channels_data[0] == 2000){
+                            new_state = 1;
+                            active_state = sys_run_auto;
+                        }
+                    }
+                } 
                 break;
             }
 
             case sys_run_auto:{
                 // auto mode: flight controlled by software, (use some joystick command to bypass?)
+                main_commander->force_PWM_enable();
+                
+                if(main_commander->is_armed())
+                {
+                    // check status: main_commander->check_run_auto(); else -> active_state = sys_fail
+                    if(main_commander->check_run_auto()){
+                        // all ok, drone armed and active
 
-                // check if is_armed();
+                        // get sbus data to detect user command to stop the drone
+                        unsigned int raw_sbus[25], sbus_channels_data[16];
 
-                // check status: main_commander->check_run_auto(); else -> active_state = sys_fail
+                        if(sbus_get_data(raw_sbus)){
+                            sbus_fill_channels(raw_sbus, sbus_channels_data);
+                            sbus_use_channels_data(sbus_channels_data);
 
-                // use controller output as PWM commands
-
+                            // how to get command to switch state? (TODO define which command)
+                            if(sbus_channels_data[0] == 1000){
+                                active_state = sys_run_manual;
+                            }
+                            if(sbus_channels_data[0] == 2000){
+                                active_state = sys_safe;
+                            }
+                            
+                            // use controller output as PWM commands
+                            // write pwm_value in controller thread
+                        }
+                    }else{
+                        // some problem occurred, go to fail state
+                        active_state = sys_fail;
+                    }
+                }
+                else{
+                    // not armed, try arming
+                    if(!main_commander->arm()){
+                        // some problem occurred, go to safe state
+                        active_state = sys_safe;
+                    }
+                }
                 break;
             }
 
             case sys_run_manual:{
                 // manual mode: flight controlled by user (joystick)
+                main_commander->force_PWM_enable();
+                
+                if(main_commander->is_armed())
+                {
+                    // check status: main_commander->check_run_manual(); else -> active_state = sys_fail
+                    if(main_commander->check_run_manual()){
+                        // all ok, drone armed and active
 
-                // check if is_armed();
+                        // get sbus data to detect user command to stop the drone
+                        unsigned int raw_sbus[25], sbus_channels_data[16];
 
-                // check status: main_commander->check_run_manual(); else -> active_state = sys_fail
+                        if(sbus_get_data(raw_sbus)){
+                            struct_pwm_data pwm_out;
+                            sbus_fill_channels(raw_sbus, sbus_channels_data);
+                            sbus_use_channels_data(sbus_channels_data);
 
-                // use SBUS messages as PWM commands
+                            // how to get command to switch state? (TODO define which command)
+                            if(sbus_channels_data[0] == 1000){
+                                active_state = sys_safe;
+                            }
+                            // example
+                            pwm_out.motor1 = sbus_channels_data[1];
+                            
+                            // use SBUS messages as PWM commands ??????
+                            // write pwm_value here
+                            global_data->write_pwm(pwm_out);
+                        }
+                    }else{
+                        // some problem occurred, go to fail state
+                        active_state = sys_fail;
+                    }
+                }
+                else{
+                    // not armed, try arming
+                    if(!main_commander->arm()){
+                        // some problem occurred, go to safe state
+                        active_state = sys_safe;
+                    }
+                }
                 break;
             }
 
@@ -337,8 +418,11 @@ int main_new(){
                 // failure mode
                 print_lock.lock();
                 printf("FATAL ERROR OCCURRED");
-                main_commander->show_all_flags();
+                // main_commander->show_all_flags();
                 print_lock.unlock();
+
+                // procedure to recover from fail ??
+
                 active_state = sys_safe;
                 break;
             }

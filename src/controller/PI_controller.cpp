@@ -104,6 +104,16 @@ void PI_controller()
     // write result on data structure
     global_data->write_cntr(PI_contr_U, PI_contr_Y);
 
+    // write pwm data only in run_auto state
+    if(main_commander->get_main_FMS_state() == sys_run_auto){
+      struct_pwm_data pwm_out;
+
+      // example 
+      pwm_out.motor1 = PI_contr_Y.pwm_left;
+
+      global_data->write_pwm(pwm_out);
+    }
+
     ThisThread::sleep_until(epoch+step);
   }
 }
