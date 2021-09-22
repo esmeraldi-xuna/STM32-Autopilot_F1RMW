@@ -2,6 +2,7 @@
 #define COMMANDER_H
 
 #include "mbed.h"
+#include "GlobalData.hpp"
 
 struct flags{
 

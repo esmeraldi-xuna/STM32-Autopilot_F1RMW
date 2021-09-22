@@ -82,15 +82,15 @@ void sensors()
     }
    
     ////////////////////////////////////// for debug///////////////////////////////////////////////
-/*   
-    flag_MPU9250_online = true;
-    flag_AK8963_online = true;
-    flag_BMP180_online = true;
+   
+    flag_MPU9250_online = false;
+    flag_AK8963_online = false;
+    flag_BMP180_online = false;
 
 
     flag_AK8963_calibrated = false;
     flag_MPU9250_calibrated = false;
-*/
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Launch events if all sensors are online
@@ -257,10 +257,10 @@ void read_sensors_eventHandler(void)
     printf("mx = %f", mx); 
     printf(" my = %f", my); 
     printf(" mz = %f  mG\n", mz); 
-*/
+
     if (flag_AK8963_calibrated)
         printf("Roll, Pitch, Yaw: %8.3f, %8.3f, %8.3f\n", roll, pitch, yaw);
-
+*/
     /////////////////////////////////////////////////////////////////////////////
 /*
     // read data from sonar

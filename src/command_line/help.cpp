@@ -95,5 +95,21 @@ void help(void)
     printf("\033[118G");
     printf(GREEN("||\n"));
 
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("auto");
+    printf("\033[0m\033[15G");
+    printf("Go to run_auto state");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("manual");
+    printf("\033[0m\033[15G");
+    printf("Go to run_manual state");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
     printf(GREEN("##=================================================== ~~~~~~~~~~~ ===================================================##\n"));
 }

@@ -65,13 +65,13 @@ Mutex led_lock, print_lock;
 #endif
 
 
-int main() 
+int main_new() 
 {
     //  communication
-    PinName pin_tx =  PA_9 /*D1*/, pin_rx = PA_10 /*D0*/;
+    PinName pin_tx =  PA_9 /* = D1*/, pin_rx = PA_10 /* = D0*/;
 
     // SBUS
-    PinName sbus_tx = D1, sbus_rx = D0; // TODO: find correct PINs
+    PinName sbus_tx = A7, sbus_rx = A2; // TODO: find correct PINs
     
     #if OVERRIDE_CONSOLE
       pin_tx = USBTX;
@@ -96,11 +96,11 @@ int main()
     // Thread Navigator(osPriorityNormal,4096,nullptr,navi_thread_name);
     // Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
     Thread CommandLineInterface(osPriorityNormal,2048,nullptr,cli_thread_name);
-    Thread Controller(osPriorityNormal,2048,nullptr,cntr_thread_name);
+    Thread Controller(osPriorityNormal,4096,nullptr,cntr_thread_name);
     Thread APF(osPriorityNormal,4096,nullptr,apf_thread_name);
     Thread EKF(osPriorityNormal,4096,nullptr,ekf_thread_name);
-    Thread mavlink_RX(osPriorityNormal,4096,nullptr,mavlink_RX_thread_name);
-    Thread mavlink_TX(osPriorityNormal,4096,nullptr,mavlink_TX_thread_name);
+    Thread mavlink_RX(osPriorityNormal,2048,nullptr,mavlink_RX_thread_name);
+    Thread mavlink_TX(osPriorityNormal,2048,nullptr,mavlink_TX_thread_name);
     
     #if SD_MOUNTED
     Thread SD_log(osPriorityNormal,2048,nullptr,"SD-log");
@@ -120,7 +120,7 @@ int main()
     #if SD_MOUNTED
     file_sys_init();
     #endif
-
+    
     printf("Spawning threads...\n");
     print_lock.unlock();
 
@@ -131,7 +131,7 @@ int main()
     /*
     Navigator.start(navigator); // not used with APF
     */
-
+   
     Sensor.start(sensors);
 
     ThisThread::sleep_for(500ms);
@@ -148,8 +148,8 @@ int main()
 
     ThisThread::sleep_for(500ms);
 
-    APF.start(apf);
-
+    APF.start(apf);    
+    
     ThisThread::sleep_for(1s);
 
     mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
@@ -166,13 +166,13 @@ int main()
     print_lock.unlock();
     CommandLineInterface.start(cli); // (start others thread in some functions)
     #endif
-
+    
     if(sbus_init(sbus_tx, sbus_rx) != -1){
-        /*
+        
         print_lock.lock();
         printf("SBUS ok\n");
         print_lock.unlock();
-        */
+        
     }
 
     // main_commander->changeState(SYSTEM_READY);
@@ -180,24 +180,30 @@ int main()
     unsigned int raw_sbus[25], sbus_channels_data[16];
 
     while(1) {
+        /*
         if(sbus_get_data(raw_sbus)){
             sbus_fill_channels(raw_sbus, sbus_channels_data);
             sbus_use_channels_data(sbus_channels_data);
         }
-    }  
+        */
+       ThisThread::sleep_for(1s);
+    } 
 }
 
 
-int main_new(){
+FSM_STATES active_state = sys_init;
+unsigned int new_state = 0;
+
+int main(){
 
     // program starts here
-    FSM_STATES active_state = sys_init;
+    
     main_commander->set_p_to_FSM_state(&active_state);
 
 
     // variables declaration
     // mavlink communication
-    PinName pin_tx =  PA_9 /*D1*/, pin_rx = PA_10 /*D0*/;
+    PinName pin_tx =  PA_9 /* = D1*/, pin_rx = PA_10 /* = D0*/;
     
     #if OVERRIDE_CONSOLE // use mavlink over usb_serial
       pin_tx = USBTX;
@@ -207,8 +213,7 @@ int main_new(){
 
 
     // SBUS (joystick)
-    PinName sbus_tx = D1, sbus_rx = D0; // TODO: find correct PINs
-    
+    PinName sbus_tx = D6, sbus_rx = A5; // TODO: find correct PINs
     
     // THREADS
     Thread Sensor               (osPriorityNormal, 4096, nullptr, "sens");
@@ -244,23 +249,30 @@ int main_new(){
     {
         switch (active_state){
             case sys_init:{
+                
                 // force PWM disabled untill RUN states
                 main_commander->force_PWM_disable();
 
-                // start CLI thred but show it only in safe state
+                // start CLI thread but show it only in safe state
                 CommandLineInterface.start(cli);
 
                 // start sensors
                 Sensor.start(sensors);
 
-                // start comm with joystick
+                // start comm with joystick (TODO: define pin)
+                /*
                 if(sbus_init(sbus_tx, sbus_rx) != -1){
                     print_lock.lock();
                     printf("SBUS ok\n");
                     print_lock.unlock();
-                }else{
                     main_commander->all_flags.comm_joystick = true;
+                }else{
+                    main_commander->all_flags.comm_joystick = false;
                 }
+                */
+                // Debug
+                main_commander->all_flags.comm_joystick = true;
+                ////////
 
                 // start log
                 #if SD_MOUNTED
@@ -272,24 +284,35 @@ int main_new(){
                     ThisThread::sleep_for(10ms);
                 }
 
+                
                 // pass to next step
+                print_lock.lock();
+                printf("INIT OK\n");
+                print_lock.unlock();
                 active_state = sys_startup;
 
                 break;
             }
 
             case sys_startup:{
+                
                 // start mavlink
                 mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
+                ThisThread::sleep_for(10ms);
                 mavlink_TX.start(callback(mavlink_serial_TX, &mavlink_serial_ch));
+                ThisThread::sleep_for(10ms);
 
                 // start controller
                 Controller.start(PI_controller);
+                ThisThread::sleep_for(10ms);
                 EKF.start(ekf);
+                ThisThread::sleep_for(10ms);
                 APF.start(apf);
+                ThisThread::sleep_for(10ms);
 
                 // start PWM
                 PWMPort.start(PWMport);
+                ThisThread::sleep_for(10ms);
 
                 // wait untill all ok
                 while(!main_commander->check_startup()){
@@ -297,18 +320,26 @@ int main_new(){
                 }
 
                 // pass to next step
+                print_lock.lock();
+                printf("STARTUP OK\n");
+                print_lock.unlock();
                 active_state = sys_safe;
                 break;
             }
 
             case sys_safe:{
+
+                print_lock.lock();
+                printf("SAFE MODE\n");
+                print_lock.unlock();
+
                 // safe state: PWM disabled, CLI active only here
                 main_commander->force_PWM_disable();
 
                 // use CLI or joystick to enter in a run mode
-                unsigned int raw_sbus[25], sbus_channels_data[16], new_state = 0;
+                unsigned int raw_sbus[25], sbus_channels_data[16];
 
-                while(new_state == 0) {
+                while (new_state == 0){
                     if(sbus_get_data(raw_sbus)){
                         sbus_fill_channels(raw_sbus, sbus_channels_data);
                         sbus_use_channels_data(sbus_channels_data);
@@ -322,12 +353,18 @@ int main_new(){
                             new_state = 1;
                             active_state = sys_run_auto;
                         }
-                    }
-                } 
+                    } 
+                }
+
                 break;
             }
 
             case sys_run_auto:{
+
+                print_lock.lock();
+                printf("RUN AUTO MODE\n");
+                print_lock.unlock();
+
                 // auto mode: flight controlled by software, (use some joystick command to bypass?)
                 main_commander->force_PWM_enable();
                 
@@ -367,10 +404,20 @@ int main_new(){
                         active_state = sys_safe;
                     }
                 }
+
+                // DEBUG
+                active_state = sys_fail;
+                ///////////////////
+
                 break;
             }
 
             case sys_run_manual:{
+
+                print_lock.lock();
+                printf("RUN MANUAL MODE\n");
+                print_lock.unlock();
+
                 // manual mode: flight controlled by user (joystick)
                 main_commander->force_PWM_enable();
                 
@@ -411,13 +458,18 @@ int main_new(){
                         active_state = sys_safe;
                     }
                 }
+
+                // DEBUG
+                active_state = sys_fail;
+                ///////////////////
+
                 break;
             }
 
             case sys_fail:{
                 // failure mode
                 print_lock.lock();
-                printf("FATAL ERROR OCCURRED");
+                printf("FATAL ERROR OCCURRED\n");
                 // main_commander->show_all_flags();
                 print_lock.unlock();
 
@@ -429,12 +481,13 @@ int main_new(){
 
             default:{
                 print_lock.lock();
-                printf("FATAL ERROR OCCURRED");
+                printf("FATAL ERROR OCCURRED\n");
                 print_lock.unlock();
                 active_state = sys_safe;
                 break;
             }
         }
+        new_state = 0;
     }
     // never reach this point 
 }

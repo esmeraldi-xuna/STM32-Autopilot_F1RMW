@@ -7,6 +7,16 @@
 #include "Kalman_filter_conv.h"
 #include "read_write_lock.hpp"
 
+
+typedef enum {
+    sys_init = 0,
+    sys_startup,
+    sys_fail,
+    sys_safe,
+    sys_run_auto,
+    sys_run_manual
+}FSM_STATES;
+
 typedef struct t{
     float ax = 0;
     float ay = 0;

@@ -4,6 +4,9 @@
 #include "global_vars.hpp"
 #include "sensors.hpp"
 
+extern FSM_STATES active_state;
+extern unsigned int new_state;
+
 void cli()
 {
     char cliBuffer[50];
@@ -17,15 +20,18 @@ void cli()
     // wait inizialization
     ThisThread::sleep_for(3s);
 
+    /*
     print_lock.lock();
-    // printf("\033[2J\033[1;1H"); // clear screen
+    printf("\033[2J\033[1;1H"); // clear screen
     printf("New Terminal\n");
     print_lock.unlock();
+    */
     
 
     // console ready, start getting input
     while (1)
     {
+        // printf("\nSTATE: %d", main_commander->get_main_FMS_state());
         if(main_commander->get_main_FMS_state() == sys_safe){
             ThisThread::sleep_for(100ms);
             print_lock.lock();
@@ -90,6 +96,16 @@ void cli()
 
             case cmd_reset:
                 reset();
+                break;
+
+            case cmd_run_man:
+                active_state = sys_run_manual;
+                new_state = 1;
+                break;
+
+            case cmd_run_auto:
+                active_state = sys_run_auto;
+                new_state = 1;
                 break;
 
             case cmd_invalid:
@@ -158,6 +174,12 @@ __command string_to_command(char* input){
     }
     if (strcmp(input, "calibration") == 0){
         return cmd_mag_calib;
+    }
+    if (strcmp(input, "auto") == 0){
+        return cmd_run_auto;
+    }
+    if (strcmp(input, "manual") == 0){
+        return cmd_run_man;
     }
     return cmd_invalid;
 }

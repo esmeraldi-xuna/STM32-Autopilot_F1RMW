@@ -21,6 +21,10 @@ int sbus_init(PinName TX_pin, PinName RX_pin){
 
 int sbus_get_data(uint* buf){
 
+    // DEBUG
+    return false;
+    ////////////
+
     // char c;
     int n_read = 0, state = 0;
     uint c = 0;

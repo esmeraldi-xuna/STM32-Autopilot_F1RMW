@@ -6,6 +6,7 @@
 Commander::Commander()
 {
     this->set_all_flags_to_zero();
+    p_main_FSM_state = nullptr;
 };
 
 void Commander::set_all_flags_to_zero(){
@@ -118,7 +119,10 @@ void Commander::set_p_to_FSM_state(FSM_STATES* pointer_to_main_state){
 }
 
 FSM_STATES Commander::get_main_FMS_state(){
-    return (*p_main_FSM_state);    
+    if(p_main_FSM_state != nullptr)
+        return (*p_main_FSM_state);
+    else 
+        return (FSM_STATES)-1;    
 }
 
 bool Commander::check_mandatory(){

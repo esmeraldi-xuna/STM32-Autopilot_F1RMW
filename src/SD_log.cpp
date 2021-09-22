@@ -81,10 +81,11 @@ void file_sys_init(void){
   if (!f) {
     printf("error file open\n");
   }
-  else
+  else{
     printf("%s\n", name);
     fclose(f);
-
+  }
+  
   return;
 }
 

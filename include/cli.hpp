@@ -17,6 +17,9 @@ enum __command
     cmd_arm_req,
     cmd_reset,
     cmd_invalid,
+
+    cmd_run_auto,
+    cmd_run_man,
 };
 
 void cli(void);

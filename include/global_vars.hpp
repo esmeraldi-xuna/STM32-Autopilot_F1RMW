@@ -9,15 +9,6 @@
 
 #include <mbed.h>
 
-typedef enum {
-    sys_init = 0,
-    sys_startup,
-    sys_fail,
-    sys_safe,
-    sys_run_auto,
-    sys_run_manual
-}FSM_STATES;
-
 #define OVERRIDE_CONSOLE 0 /* if 0: console on usb, mavlink on D1, D0; if 1: console on D1, D0, mavlink on usb*/
 #define CLI_ACTIVE 1
 #define SD_MOUNTED 1

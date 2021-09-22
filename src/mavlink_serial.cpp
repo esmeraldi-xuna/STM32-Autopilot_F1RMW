@@ -25,6 +25,10 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
 
     int recived = 0;
 
+    // DEBUG
+    main_commander->all_flags.comm_mavlink_rx = true;
+    //////
+
     while(1){
         epoch = Kernel::Clock::now();
 
@@ -126,6 +130,10 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     mavlink_heartbeat_t heart;
 
 
+    // DEBUG
+    main_commander->all_flags.comm_mavlink_tx = true;
+    //////
+
     heartbeat_recived = false;
 
     mavlink_msg_heartbeat_encode(SYS_ID, COMP_ID, &msg, &heart);
@@ -141,8 +149,10 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     print_lock.lock();
     if (sent != pck_len)
         printf("error sending\n");
-    else
+    else{
         printf("heartbeat sent correctly\n");
+        main_commander->all_flags.comm_mavlink_tx = true;
+    }
 
     printf("Waiting heartbeat...\n");
     print_lock.unlock();
@@ -151,7 +161,6 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     while(heartbeat_recived == true)
         ThisThread::sleep_for(50ms);
 
-    main_commander->all_flags.comm_mavlink_tx = true;
     while(1)
     {
         epoch = Kernel::Clock::now();
