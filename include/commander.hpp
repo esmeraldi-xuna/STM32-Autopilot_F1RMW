@@ -38,7 +38,6 @@ struct flags{
 class Commander
 {
     public:
-        struct flags all_flags;
 
         Commander();
 
@@ -61,10 +60,56 @@ class Commander
         void force_PWM_disable();
         void force_PWM_enable(); 
 
+        // getter - setter for flags
+        bool get_flag_MPU9250_online();
+        void set_flag_MPU9250_online(bool);
+
+        bool get_flag_AK8963_online();
+        void set_flag_AK8963_online(bool);
+
+        bool get_flag_AK8963_calibrated();
+        void set_flag_AK8963_calibrated(bool);
+
+        bool get_flag_BMP180_online();
+        void set_flag_BMP180_online(bool);   
+
+        bool get_pwm_active();
+        void set_pwm_active(bool);
+
+        bool get_force_pwm_enable();
+        void set_force_pwm_enable(bool);
+
+        bool get_force_pwm_disable();
+        void set_force_pwm_disable(bool);
+
+        bool get_system_enable();
+        void set_system_enable(bool);
+        
+        bool get_flag_controller_active();
+        void set_flag_controller_active(bool);
+        
+        bool get_flag_ekf_active();
+        void set_flag_ekf_active(bool);
+        
+        bool get_flag_apf_active();
+        void set_flag_apf_active(bool);
+
+        bool get_flag_comm_mavlink_rx();
+        void set_flag_comm_mavlink_rx(bool);
+        
+        bool get_flag_comm_mavlink_tx();
+        void set_flag_comm_mavlink_tx(bool);
+        
+        bool get_flag_comm_joystick();
+        void set_flag_comm_joystick(bool);
+
     private:
-        //system_states_t curr_state;
+
+        struct flags all_flags;
+        
         bool flag_armed;
-        rtos::Mutex lock_flags, lock_state;
+        rtos::Mutex lock_state;
+        Read_Write_Lock lock_flags;
         FSM_STATES* p_main_FSM_state;
 };
 

@@ -61,7 +61,7 @@ void sensors()
     flag_MPU9250_online = init_accel_gyro();
 
     if(flag_MPU9250_online){
-        main_commander->all_flags.sensor.flag_MPU9250_online = true;
+        main_commander->set_flag_MPU9250_online(true);
     }
 
     ThisThread::sleep_for(500ms);
@@ -69,7 +69,7 @@ void sensors()
     flag_AK8963_online = init_magn();
 
     if(flag_AK8963_online){
-        main_commander->all_flags.sensor.flag_AK8963_online = true;
+        main_commander->set_flag_AK8963_online(true);
     }
 
     ThisThread::sleep_for(500ms);
@@ -78,7 +78,7 @@ void sensors()
 
     flag_BMP180_online = init_baro();
     if(flag_BMP180_online){
-        main_commander->all_flags.sensor.flag_BMP180_online = true;
+        main_commander->set_flag_BMP180_online(true);
     }
    
     ////////////////////////////////////// for debug///////////////////////////////////////////////
@@ -366,7 +366,7 @@ bool init_magn(){
     if (try_get_calibration_values(min_mag_extr, max_mag_extr)){
         magCal.setExtremes(min_mag_extr, max_mag_extr);
         flag_AK8963_calibrated = true;
-        main_commander->all_flags.sensor.flag_AK8963_calibrated = true;
+        main_commander->set_flag_AK8963_calibrated(true);
         return true;
     }else{
         flag_AK8963_calibrated = false;
@@ -413,7 +413,7 @@ void mag_calibration(void){
     print_lock.unlock();
 
     flag_AK8963_calibrated = true;
-    main_commander->all_flags.sensor.flag_AK8963_calibrated = true;
+    main_commander->set_flag_AK8963_calibrated(true);
 
     magCal.getExtremes(min_mag_extr, max_mag_extr);
 

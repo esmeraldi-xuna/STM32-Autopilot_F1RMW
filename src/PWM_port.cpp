@@ -43,7 +43,7 @@ void PWMport()
     ServoWriteEventSetup();
     MotorWriteEventSetup();
 
-    main_commander->all_flags.PWM.active = true;
+    main_commander->set_pwm_active(true);
 
     queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
 
@@ -82,8 +82,8 @@ void ServoWriteHandler(void)
     pwm_data = global_data->read_pwm();
 
     // put output only if: NOT flag_force_disable; force_enable OR armed
-    if(!main_commander->all_flags.PWM.force_disable){
-        if (main_commander->all_flags.PWM.force_enable || main_commander->is_armed()){
+    if(!main_commander->get_force_pwm_disable()){
+        if (main_commander->get_force_pwm_enable() || main_commander->is_armed()){
             // output enabled
             /*
             motor1 = pwm_output.motor1;
@@ -127,8 +127,8 @@ void MotorWriteHandler(void)
     pwm_output = global_data->read_pwm();
     
     // put output only if: NOT flag_force_disable; force_enable OR armed
-    if(!main_commander->all_flags.PWM.force_disable){
-        if (main_commander->all_flags.PWM.force_enable || main_commander->is_armed()){
+    if(!main_commander->get_force_pwm_disable()){
+        if (main_commander->get_force_pwm_enable() || main_commander->is_armed()){
             // output enabled
             /*
             motor1 = pwm_output.motor1;

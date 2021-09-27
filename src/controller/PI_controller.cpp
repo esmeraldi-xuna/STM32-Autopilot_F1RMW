@@ -81,7 +81,7 @@ void PI_controller()
   // Initialize model
   PI_contr_initialize(PI_contr_M, &PI_contr_U, &PI_contr_Y);
 
-  main_commander->all_flags.controller_active = true;
+  main_commander->set_flag_controller_active(true);
 
   // working phase
   while (1)

@@ -26,7 +26,7 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
     int recived = 0;
 
     // DEBUG
-    main_commander->all_flags.comm_mavlink_rx = true;
+    main_commander->set_flag_comm_mavlink_rx(true);
     //////
 
     while(1){
@@ -46,7 +46,7 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                     switch (msg.msgid)
                     {
                         case MAVLINK_MSG_ID_HEARTBEAT:
-                        main_commander->all_flags.comm_mavlink_rx = true;
+                        main_commander->set_flag_comm_mavlink_rx(true);
 
                         /*
                         print_lock.lock();
@@ -131,7 +131,7 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
 
 
     // DEBUG
-    main_commander->all_flags.comm_mavlink_tx = true;
+    main_commander->set_flag_comm_mavlink_tx(true);
     //////
 
     heartbeat_recived = false;
@@ -151,7 +151,7 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
         printf("error sending\n");
     else{
         printf("heartbeat sent correctly\n");
-        main_commander->all_flags.comm_mavlink_tx = true;
+        main_commander->set_flag_comm_mavlink_tx(true);
     }
 
     printf("Waiting heartbeat...\n");

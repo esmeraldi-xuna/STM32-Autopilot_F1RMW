@@ -265,13 +265,13 @@ int main(){
                     print_lock.lock();
                     printf("SBUS ok\n");
                     print_lock.unlock();
-                    main_commander->all_flags.comm_joystick = true;
+                    main_commander->set_flag_comm_joystick(true);
                 }else{
-                    main_commander->all_flags.comm_joystick = false;
+                    main_commander->set_flag_comm_joystick(false);
                 }
                 */
                 // Debug
-                main_commander->all_flags.comm_joystick = true;
+                main_commander->set_flag_comm_joystick(true);
                 ////////
 
                 // start log

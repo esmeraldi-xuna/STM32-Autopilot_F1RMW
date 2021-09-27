@@ -11,6 +11,8 @@ Commander::Commander()
 
 void Commander::set_all_flags_to_zero(){
 
+    lock_flags.write_lock();
+
     flag_armed = false;
 
     // sensors state flags
@@ -34,10 +36,14 @@ void Commander::set_all_flags_to_zero(){
     all_flags.comm_mavlink_rx = false;
     all_flags.comm_mavlink_tx = false;
     all_flags.comm_joystick = false;
+
+    lock_flags.write_unlock();
 }
 
 bool Commander::arm(){
     bool can_arm = true;
+
+    lock_flags.read_lock();
 
     if(all_flags.PWM.force_disable){
 
@@ -46,8 +52,6 @@ bool Commander::arm(){
         print_lock.lock();
         return false;
     }
-
-    this->lock_flags.lock();
     
     // check communication
     if( all_flags.comm_mavlink_rx == false){
@@ -110,7 +114,7 @@ bool Commander::arm(){
         printf("Arming denied, something gone wrong...\n");
         print_lock.lock();
     }
-    this->lock_flags.unlock();
+    lock_flags.read_unlock();
     return this->flag_armed;
 }
 
@@ -126,6 +130,8 @@ FSM_STATES Commander::get_main_FMS_state(){
 }
 
 bool Commander::check_mandatory(){
+
+    lock_flags.read_lock();
 
     bool all_ok = true;
 
@@ -144,11 +150,15 @@ bool Commander::check_mandatory(){
     if(!all_flags.comm_joystick)
         all_ok = false;
 
+    lock_flags.read_unlock();
+
     return all_ok;
 }
 
 bool Commander::check_startup(){
     
+    lock_flags.read_lock();
+
     bool all_ok = true;
 
     // check mavlink
@@ -171,12 +181,16 @@ bool Commander::check_startup(){
     // check pwm thread
     if(!all_flags.PWM.active)
         all_ok = false;
+
+    lock_flags.read_unlock();
 
     return all_ok;
 }
 
 bool Commander::check_run_auto(){
     
+    lock_flags.read_lock();
+
     bool all_ok = true;
 
     // check mavlink
@@ -200,11 +214,15 @@ bool Commander::check_run_auto(){
     if(!all_flags.PWM.active)
         all_ok = false;
 
+    lock_flags.read_unlock();
+
     return all_ok;
 }
 
 bool Commander::check_run_manual(){
     
+    lock_flags.read_lock();
+
     bool all_ok = true;
 
     // check joystick communication
@@ -215,21 +233,276 @@ bool Commander::check_run_manual(){
     if(!all_flags.PWM.active)
         all_ok = false;
 
+    lock_flags.read_unlock();
+
     return all_ok;
 }
 
 void Commander::force_PWM_disable(){
+    
+    lock_flags.write_lock();
+    
     all_flags.PWM.force_enable = false;
     all_flags.PWM.force_disable = true;
+
+    lock_flags.write_unlock();
 }
 
 void Commander::force_PWM_enable(){
+
+    lock_flags.write_lock();
+
     all_flags.PWM.force_disable = false;
     all_flags.PWM.force_enable = true;
+
+    lock_flags.write_unlock();
 } 
 
 bool Commander::show_all_flags(){
+
+    lock_flags.read_lock();
+
+    lock_flags.read_unlock();
+
     return true;
 }
 
+// getter - setter for flags
+bool Commander::get_flag_MPU9250_online()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.sensor.flag_MPU9250_online;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_MPU9250_online(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.sensor.flag_MPU9250_online = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_AK8963_online()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.sensor.flag_AK8963_online;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_AK8963_online(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.sensor.flag_AK8963_online = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_AK8963_calibrated()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.sensor.flag_AK8963_calibrated;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_AK8963_calibrated(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.sensor.flag_AK8963_calibrated = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_BMP180_online()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.sensor.flag_BMP180_online;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_BMP180_online(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.sensor.flag_BMP180_online = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_pwm_active()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.PWM.active;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_pwm_active(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.PWM.active = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_force_pwm_enable()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.PWM.force_enable;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_force_pwm_enable(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.PWM.force_enable = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_force_pwm_disable()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.PWM.force_disable;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_force_pwm_disable(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.PWM.force_disable = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_system_enable()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.PWM.system_enable;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_system_enable(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.PWM.system_enable = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_controller_active()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.ekf_active;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_controller_active(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.controller_active = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_ekf_active()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.ekf_active;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_ekf_active(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.ekf_active = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_apf_active()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.apf_active;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_apf_active(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.apf_active = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_comm_mavlink_rx()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.comm_mavlink_rx;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_comm_mavlink_rx(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.comm_mavlink_rx = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_comm_mavlink_tx()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.comm_mavlink_tx;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_comm_mavlink_tx(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.comm_mavlink_tx = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
+bool Commander::get_flag_comm_joystick()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.comm_joystick;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_comm_joystick(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.comm_joystick = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
 

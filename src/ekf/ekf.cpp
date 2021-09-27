@@ -33,7 +33,7 @@ void ekf()
   // Initialize model
   Kalman_filter_conv_initialize(Kalman_filter_conv_M, &Kalman_filter_conv_U, &Kalman_filter_conv_Y);
 
-  main_commander->all_flags.ekf_active = true;
+  main_commander->set_flag_ekf_active(true);
 
   // working phase
   while (1)
