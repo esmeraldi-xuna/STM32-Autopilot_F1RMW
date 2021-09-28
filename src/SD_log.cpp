@@ -108,7 +108,7 @@ void SD_log_loop(void){
   }
 
   // write first line for csv file
-  fprintf(log_file, "TIME (ms), ALT, ACC, CNTRL, insert all fields separated by , ");
+  fprintf(log_file, "TIME (ms), ALTITUDE, AX, AY, AZ, GX, GY, GZ, MX, MY, MZ, ROOL, PITCH, YAW, CTRL_U, CRTL_Y, APF_U, APF_Y, EKF_U, EKF_Y, PWM_1, PWM_2, PWM_3, PWM_4");
 
   Kernel::Clock::time_point start_log = Kernel::Clock::now();
   while (1)
@@ -124,3 +124,4 @@ void SD_log_loop(void){
     ThisThread::sleep_until(log_time + log_step);
   }
 }
+
