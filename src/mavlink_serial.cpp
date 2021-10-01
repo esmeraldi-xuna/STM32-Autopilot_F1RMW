@@ -4,6 +4,7 @@
 #include "mavlink_serial.hpp"
 #include "mavlink/common/mavlink.h"
 
+// global bool used for check correct communication start 
 bool heartbeat_recived = false;
 
 void mavlink_serial_RX(BufferedSerial* serial_ch){
@@ -23,19 +24,23 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
     mavlink_odometry_t odom;
     mavlink_set_position_target_local_ned_t setpointsTrajectoryPlanner;
 
-    int recived = 0;
+    int byte_recived = 0;
 
     // DEBUG
     main_commander->set_flag_comm_mavlink_rx(true);
     //////
 
     while(1){
+        // get actual time
         epoch = Kernel::Clock::now();
 
-        if((recived = serial_ch->read(in_data, MAVLINK_MAX_PACKET_LEN)) > 0){
+        // check if something is arrived
+        if((byte_recived = serial_ch->read(in_data, MAVLINK_MAX_PACKET_LEN)) > 0){
             
-            for(int ii = 0; ii < recived; ii++) {
+            // get messages
+            for(int ii = 0; ii < byte_recived; ii++) {
 
+                // check if message is correct
                 if(mavlink_parse_char(MAVLINK_COMM_0, in_data[ii], &msg, &status))
                 {
                     /*
@@ -43,9 +48,14 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                     printf("Received message with ID %d, sequence: %d from component %d of system %d\n", msg.msgid, msg.seq, msg.compid, msg.sysid);
                     print_lock.unlock();
                     */
+
+                    // switch on message type 
                     switch (msg.msgid)
                     {
+                        // heartbeat for communication start/status
                         case MAVLINK_MSG_ID_HEARTBEAT:
+
+                        // notify commander that mavlink_rx is ok
                         main_commander->set_flag_comm_mavlink_rx(true);
 
                         /*
@@ -54,50 +64,51 @@ void mavlink_serial_RX(BufferedSerial* serial_ch){
                         print_lock.unlock();
                         */
 
+                        // set correct receive
                         heartbeat_recived = true;
 
                         break;
                         
+                        // case positions target
                         case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED:
                         
+                        // decode message
                         mavlink_msg_set_position_target_local_ned_decode(&msg, &setpointsTrajectoryPlanner);
 
+                        /*
                         print_lock.lock();
                         printf("recived set_point: \n");
                         print_lock.unlock();
+                        */
+
+                        // do something with message
 
                         break;
 
+                        // case odometry
                         case MAVLINK_MSG_ID_ODOMETRY:
-                    
+
                         mavlink_msg_odometry_decode(&msg,&odom);
-                        sensor_data = global_data->read_sensor();
-                        sensor_data.ax = odom.x;
-                        sensor_data.ay = odom.y;
-                        sensor_data.az = odom.z;
-                        sensor_data.mx = odom.vx;
-                        sensor_data.my = odom.vy;
-                        sensor_data.mz = odom.vz;
-                        global_data->write_sensor(sensor_data);
                        
                         // printf("recived odometry: %f, %f, %f, %f, %f, %f\n", odom.x, odom.y, odom.z, odom.vx, odom.vy, odom.vz);
 
+                        // do something with message
+
                         break;
 
+                        // case attitude
                         case MAVLINK_MSG_ID_ATTITUDE:
                         
                         mavlink_msg_attitude_decode(&msg,&att);
-                        sensor_data = global_data->read_sensor();
-                        sensor_data.pitch = att.pitch;
-                        sensor_data.yaw = att.yaw;
-                        sensor_data.roll = att.roll;
-                        global_data->write_sensor(sensor_data);
                         
                         // printf("recived attitude: %f, %f, %f\n", att.roll, att.pitch, att.yaw);
+
+                        // do something with message
 
                         break;
                         
                         default:
+                        // error
                         print_lock.lock();
                         printf("Mavlink message not decoded!\n");
                         print_lock.unlock();
@@ -124,6 +135,7 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
     uint8_t SYS_ID = 8;  // for mavlink encoding
     uint8_t COMP_ID = 1;
 
+    // mavlink datastructure
     mavlink_message_t msg;
     mavlink_odometry_t odom_data;
     mavlink_attitude_t att;
@@ -136,17 +148,17 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
 
     heartbeat_recived = false;
 
+    // setup heartbeat message
     mavlink_msg_heartbeat_encode(SYS_ID, COMP_ID, &msg, &heart);
     pck_len = mavlink_msg_to_send_buffer(out_data, &msg); 
 
+    print_lock.lock();
     // sending heartbeat to start connection
     if((sent = serial_ch->write(out_data, pck_len)) < 0)
     {
-        print_lock.lock();
         printf("Error sending data");
-        print_lock.unlock();
     }  
-    print_lock.lock();
+    
     if (sent != pck_len)
         printf("error sending\n");
     else{
@@ -154,13 +166,14 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
         main_commander->set_flag_comm_mavlink_tx(true);
     }
 
-    printf("Waiting heartbeat...\n");
+    // printf("Waiting heartbeat...\n");
     print_lock.unlock();
 
     // when heartbeat recived -> heartbeat_recived=true
-    while(heartbeat_recived == true)
+    while(heartbeat_recived == false)
         ThisThread::sleep_for(50ms);
 
+    // communication ok, start sending messages
     while(1)
     {
         epoch = Kernel::Clock::now();
@@ -184,13 +197,11 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
             print_lock.lock();
             printf("Error sending data");
             print_lock.unlock();
-        }/*
+        }
         if (sent != pck_len)
             printf("error sending\n");
-        else
-            printf("sent odometry: %f, %f, %f, %f, %f, %f\n", odom_data.x, odom_data.y, odom_data.z, odom_data.vx, odom_data.vy, odom_data.vz);
-*/
 
+        // preapare data to send
         att.pitch = sensor_data.pitch;
         att.yaw = sensor_data.yaw;
         att.roll = sensor_data.roll;
@@ -204,12 +215,10 @@ void mavlink_serial_TX(BufferedSerial* serial_ch){
             print_lock.lock();
             printf("Error sending data");
             print_lock.unlock();
-        }/*
+        }
         if (sent != pck_len)
             printf("error sending\n");
-        else
-            printf("sent attitude: %f, %f, %f\n", att.roll, att.pitch, att.yaw);
-*/
+            
         // every 100 cycles send a heartbeat
         if(cnt_for_heartbeat == 100){
             cnt_for_heartbeat = 0;

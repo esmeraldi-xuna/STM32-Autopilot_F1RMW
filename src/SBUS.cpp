@@ -6,14 +6,18 @@
 
 #define uint unsigned int
 
+// serial channel for SBUS
 static BufferedSerial* sbus_channel;
 
 int sbus_init(PinName TX_pin, PinName RX_pin){
 
+    // open channel
     sbus_channel = new BufferedSerial(TX_pin, RX_pin, 100000);
     if(sbus_channel == NULL){
         return -1;
     }
+
+    // setup
     sbus_channel->set_format(8, BufferedSerial::Even, 2);
 
     return 0;
@@ -21,33 +25,40 @@ int sbus_init(PinName TX_pin, PinName RX_pin){
 
 int sbus_get_data(uint* buf){
 
-    // DEBUG
+    // DEBUG (do nothing)
     return false;
     ////////////
 
-    // char c;
     int n_read = 0, state = 0;
     uint c = 0;
 
     // read message
     while (1) {
         
+        // read one char at a time
         n_read = sbus_channel->read(&c, 1);
+
         if (state == 0) {
+            // read header
             if (c == HEADER) {
-            buf[state] = c;
-            state++;
+                buf[state] = c;
+                state++;
             } else {
                 state = 0;
             }
         } else {
+            // read data
             if (state < 25) {
-            buf[state] = c;
-            state++;
+                // usefull data
+                buf[state] = c;
+                state++;
             } else {
+                // end of message, check terminators
                 if ((buf[24] == FOOTER) || ((buf[24] & 0x0F) == FOOTER2)) {
+                    // all ok
                     return true;
                 } else {
+                    // some error
                     return false;
                 }
             }
@@ -59,6 +70,7 @@ int sbus_get_data(uint* buf){
 
 int sbus_fill_channels(uint* raw_data, uint* output){
 
+    // get 16 values from raw data
     output[0]  = (uint)((raw_data[1]      ) | ((raw_data[2]  << 8) & 0x07FF));
     output[1]  = (uint)((raw_data[2]  >> 3) | ((raw_data[3]  << 5) & 0x07FF));
     output[2]  = (uint)((raw_data[3]  >> 6) | ((raw_data[4]  << 2) | ((raw_data[5] << 10) & 0x07FF)));

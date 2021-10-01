@@ -194,4 +194,7 @@ void arm_request(void){
     if (main_commander->arm()){
         printf("Arm ok!!!!");
     }
+    else{
+        printf("NOT ARMED!!!!");
+    }
 }
