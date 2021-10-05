@@ -4,8 +4,10 @@
 #include "global_vars.hpp"
 #include "sensors.hpp"
 
+// used for testing FSM
 extern FSM_STATES active_state;
 extern unsigned int new_state;
+////////////////////////////////////
 
 void cli()
 {
@@ -52,6 +54,7 @@ void cli()
             // get command
             command = string_to_command(cliBuffer);
 
+            // switch command functions
             print_lock.lock();
             switch (command)
             {

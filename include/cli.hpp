@@ -42,6 +42,8 @@ void display_once(void);
 
 void display_repeat(void);
 
+void display_loop(void);
+
 void start_magnetometer_calibration(void);
 
 void arm_request(void);

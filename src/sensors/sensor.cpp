@@ -58,6 +58,7 @@ void sensors()
 
     //////////////////////////////////// MPU9250 //////////////////////////////////////////////
 
+    // INIT: check if online
     flag_MPU9250_online = init_accel_gyro();
 
     if(flag_MPU9250_online){
@@ -66,6 +67,7 @@ void sensors()
 
     ThisThread::sleep_for(500ms);
 
+    // INIT: check if online
     flag_AK8963_online = init_magn();
 
     if(flag_AK8963_online){
@@ -76,6 +78,7 @@ void sensors()
 
     ///////////////////////////////// BMP180 //////////////////////////////////////////////
 
+    // INIT: check if online
     flag_BMP180_online = init_baro();
     if(flag_BMP180_online){
         main_commander->set_flag_BMP180_online(true);
@@ -177,6 +180,7 @@ void read_sensors_eventHandler(void)
     all_data.altitude = (8314/9.81 * temp * log(p0/pressure)); // meters
     // printf("Altitude = %8.3f m\n", all_data.altitude);
 
+    // alternative conversion
     float altitude = 145366.45f*(1.0f - powf(pressure/1013.25f, 0.190284f) );
     // printf("Altitude = %f feet\n", altitude);
     // printf("Altitude: %8.3f m\n", altitude/3.2828f);
@@ -227,7 +231,7 @@ void read_sensors_eventHandler(void)
     // yaw = atan2(-mag_y,mag_x);
 
 
-    // calculate roll, pitch, yaw through quaternions
+    // calculate roll, pitch, yaw through quaternions (quat. need to be updated with specific functions -> other event, every 3ms)
     yaw   = atan2(2.0f * (q[1] * q[2] + q[0] * q[3]), q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);   
     pitch = -asin(2.0f * (q[1] * q[3] - q[0] * q[2]));
     roll  = atan2(2.0f * (q[0] * q[1] + q[2] * q[3]), q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3]);
@@ -286,6 +290,7 @@ int I2C_scan(void){
 
     print_lock.lock();
 	
+    // check all adresses
 	for (int address = 0; address < 127; address++)
 	{
 		if (!i2c_ch->write(address << 1, NULL, 0)) // 0 returned is ok
@@ -423,7 +428,7 @@ void mag_calibration(void){
 
     #endif
     
-
+    return;
 }
 
 void do_calibration_step(){
@@ -438,6 +443,7 @@ void do_calibration_step(){
 
     // printf("Read: %f, %f, %f\n", tmp[0], tmp[1], tmp[2]); 
 
+    // calibration done in magCal.run function
     magCal.run(tmp1, tmp2);
 
     return;
@@ -445,6 +451,7 @@ void do_calibration_step(){
 
 bool try_get_calibration_values(float* min_ext, float* max_ext){
     
+    // try open calibration file
     FILE* f = fopen("/sd/calibration_values.txt", "r");
     char buffer[100];
 
@@ -454,13 +461,6 @@ bool try_get_calibration_values(float* min_ext, float* max_ext){
         print_lock.unlock();
         fclose(f);
         return false;
-
-        f = fopen("/sd/calibration_values.txt", "w+");
-        if (!f) {
-            print_lock.lock();
-            printf("Error creating calibration file\n");
-            print_lock.unlock();
-        }
 
     }else{
         if (fgets(buffer, 100, f) == NULL){ // read first line, do nothing
@@ -521,7 +521,7 @@ void save_calib_values(float* min_ext, float* max_ext){
     FILE* f = fopen("/sd/calibration_values.txt", "w+");
     if (!f) {
         print_lock.lock();
-        printf("Error saving calibration values\n");
+        printf("Error opening calibration file\n");
         print_lock.unlock();
     }else{
         fputs("Magnetometer extremes [minXYZ; maxXYZ]\n", f);

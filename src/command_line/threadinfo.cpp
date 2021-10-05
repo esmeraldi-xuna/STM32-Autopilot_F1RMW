@@ -22,6 +22,7 @@
 #error "Stats not enabled"
 #endif
  
+// attention: MAX value of info displayed
 #define MAX_THREAD_STATS    0x10
  
 int threadinfo()

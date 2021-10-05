@@ -3,7 +3,6 @@
 #include "cli.hpp"
 #include "global_vars.hpp"
 
-void display_loop(void);
 bool exit_flag = false;
 
 void display_once(void){
@@ -42,6 +41,7 @@ void display_loop(void){
         
         global_data->display();
 
+        // display new data every second
         ThisThread::sleep_for(1s);
     }
 
