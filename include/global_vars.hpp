@@ -13,6 +13,8 @@
 #define CLI_ACTIVE 1
 #define SD_MOUNTED 1
 
+
+
 /////////////////////////////////  synch obj   /////////////////////////////////////
 
 extern Mutex led_lock, print_lock;

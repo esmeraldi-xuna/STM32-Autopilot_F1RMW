@@ -9,9 +9,11 @@
 
 void apf()
 {
+  /*
   print_lock.lock();
   printf("Start APF thread ID: %d\n", (int)ThisThread::get_id());
   print_lock.unlock();
+  */
 
   Kernel::Clock::time_point epoch;
   std::chrono::milliseconds step = 500ms;

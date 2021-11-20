@@ -48,7 +48,7 @@ class Commander
 
         bool is_armed() {return flag_armed;};
 
-        bool check_mandatory();
+        bool check_init();
         bool check_startup();
         bool check_run_auto();
         bool check_run_manual();

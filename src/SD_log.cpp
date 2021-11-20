@@ -108,7 +108,7 @@ void SD_log_loop(void){
   std::chrono::milliseconds log_step = 500ms;
 
   print_lock.lock();
-  printf("Start LOG_SD thread ID: %d\n", (int)ThisThread::get_id());
+  printf("Start LOG\n"); //_SD thread ID: %d\n", (int)ThisThread::get_id());
   print_lock.unlock();
 
   // open log file

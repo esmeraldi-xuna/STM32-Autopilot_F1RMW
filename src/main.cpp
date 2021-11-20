@@ -65,7 +65,7 @@ GlobalData* global_data = new GlobalData();
 Mutex led_lock, print_lock;
 
 // final state machine active state
-FSM_STATES active_state = sys_init;
+FSM_STATES active_state = SYS_INIT;
 
 // boolean used by CLI to change state when in safe state
 unsigned int new_state = 0;
@@ -126,7 +126,7 @@ int main(){
     while(1)
     {
         switch (active_state){
-            case sys_init:{
+            case SYS_INIT:{
                 
                 // force PWM disabled untill RUN states
                 main_commander->force_PWM_disable();
@@ -158,7 +158,7 @@ int main(){
                 #endif
 
                 // wait untill all ok
-                while(!main_commander->check_mandatory()){
+                while(!main_commander->check_init()){
                     ThisThread::sleep_for(10ms);
                 }
 
@@ -167,13 +167,17 @@ int main(){
                 print_lock.lock();
                 printf("INIT OK\n");
                 print_lock.unlock();
-                active_state = sys_startup;
+                active_state = SYS_STARTUP;
 
                 break;
             }
 
-            case sys_startup:{
+            case SYS_STARTUP:{
                 
+                print_lock.lock();
+                printf("System STARTUP...\n");
+                print_lock.unlock();
+
                 // start mavlink
                 mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
                 ThisThread::sleep_for(10ms);
@@ -201,11 +205,11 @@ int main(){
                 print_lock.lock();
                 printf("STARTUP OK\n");
                 print_lock.unlock();
-                active_state = sys_safe;
+                active_state = SYS_SAFE;
                 break;
             }
 
-            case sys_safe:{
+            case SYS_SAFE:{
 
                 print_lock.lock();
                 printf("SAFE MODE\n");
@@ -225,11 +229,11 @@ int main(){
                         // how to get command to switch state? (TODO define which command)
                         if(sbus_channels_data[0] == 1000){
                             new_state = 1;
-                            active_state = sys_run_manual;
+                            active_state = SYS_RUN_MANUAL;
                         }
                         if(sbus_channels_data[0] == 2000){
                             new_state = 1;
-                            active_state = sys_run_auto;
+                            active_state = SYS_RUN_AUTO;
                         }
                     } 
                 }
@@ -237,7 +241,7 @@ int main(){
                 break;
             }
 
-            case sys_run_auto:{
+            case SYS_RUN_AUTO:{
 
                 print_lock.lock();
                 printf("RUN AUTO MODE\n");
@@ -261,10 +265,10 @@ int main(){
 
                             // how to get command to switch state? (TODO define which command)
                             if(sbus_channels_data[0] == 1000){
-                                active_state = sys_run_manual;
+                                active_state = SYS_RUN_MANUAL;
                             }
                             if(sbus_channels_data[0] == 2000){
-                                active_state = sys_safe;
+                                active_state = SYS_SAFE;
                             }
                             
                             // use controller output as PWM commands
@@ -272,25 +276,30 @@ int main(){
                         }
                     }else{
                         // some problem occurred, go to fail state
-                        active_state = sys_fail;
+                        // differences between major and minor to be defined
+                        if(1){
+                            active_state = SYS_FAIL_MAJOR;
+                        }else{
+                            active_state = SYS_FAIL_MINOR;
+                        }
                     }
                 }
                 else{
                     // not armed, try arming
                     if(!main_commander->arm()){
                         // some problem occurred, go to safe state
-                        active_state = sys_safe;
+                        active_state = SYS_SAFE;
                     }
                 }
 
                 // DEBUG
-                active_state = sys_fail;
+                active_state = SYS_FAIL_MAJOR;
                 ///////////////////
 
                 break;
             }
 
-            case sys_run_manual:{
+            case SYS_RUN_MANUAL:{
 
                 print_lock.lock();
                 printf("RUN MANUAL MODE\n");
@@ -315,7 +324,7 @@ int main(){
 
                             // how to get command to switch state? (TODO define which command)
                             if(sbus_channels_data[0] == 1000){
-                                active_state = sys_safe;
+                                active_state = SYS_SAFE;
                             }
                             // example
                             pwm_out.motor1 = sbus_channels_data[1];
@@ -326,26 +335,31 @@ int main(){
                         }
                     }else{
                         // some problem occurred, go to fail state
-                        active_state = sys_fail;
+                        // differences between major and minor to be defined
+                        if(1){
+                            active_state = SYS_FAIL_MAJOR;
+                        }else{
+                            active_state = SYS_FAIL_MINOR;
+                        }
                     }
                 }
                 else{
                     // not armed, try arming
                     if(!main_commander->arm()){
                         // some problem occurred, go to safe state
-                        active_state = sys_safe;
+                        active_state = SYS_SAFE;
                     }
                 }
 
                 // DEBUG
-                active_state = sys_fail;
+                active_state = SYS_FAIL_MAJOR;
                 ///////////////////
 
                 break;
             }
 
-            case sys_fail:{
-                // failure mode
+            case SYS_FAIL_MAJOR:{
+                // failure major mode
                 print_lock.lock();
                 printf("FATAL ERROR OCCURRED\n");
                 // main_commander->show_all_flags();
@@ -353,7 +367,20 @@ int main(){
 
                 // procedure to recover from fail ??
 
-                active_state = sys_safe;
+                active_state = SYS_SAFE;
+                break;
+            }
+
+            case SYS_FAIL_MINOR:{
+                // failure minor mode
+                print_lock.lock();
+                printf("MINOR ERROR OCCURRED\n");
+                // main_commander->show_all_flags();
+                print_lock.unlock();
+
+                // procedure to recover from fail ??
+
+                active_state = SYS_SAFE;
                 break;
             }
 
@@ -361,7 +388,7 @@ int main(){
                 print_lock.lock();
                 printf("FATAL ERROR OCCURRED\n");
                 print_lock.unlock();
-                active_state = sys_safe;
+                active_state = SYS_SAFE;
                 break;
             }
         }
@@ -370,148 +397,3 @@ int main(){
     // never reach this point 
 }
 
-
-
-/*
-
-#if PIL_MODE
-    #include "UDPPIL.hpp"
-    // This spawns the thread responsible for receving/sending simulation data from/to an external PC. It is enables only if 
-    // the build flag PIL_MODE is set to 1. The thread function is in UDPComm.cpp
-     
-
-    const char* UDP_PIL_thread_name = "UDPPIL";
-    Thread UDPIO_PIL(osPriorityHigh,4096,nullptr,UDP_PIL_thread_name);
-#endif
-#if PIL_MODE // Start UDP communtication only if in PIL mode!
-UDPIO_PIL.start(UDPPIL);
-#endif
-
-
-
-
-
-
-
-int main_old()
-{
-    //  communication
-    PinName pin_tx =  PA_9 , pin_rx = PA_10;
-
-    // SBUS
-    PinName sbus_tx = A7, sbus_rx = A2; // TODO: find correct PINs
-    
-    #if OVERRIDE_CONSOLE
-      pin_tx = USBTX;
-      pin_rx = USBRX;
-    #endif
-    static BufferedSerial mavlink_serial_ch(pin_tx, pin_rx, 9600);
-
-    // defining threads
-    const char* sens_thread_name = "sens";
-    const char* PWMport_thread_name = "PWM";
-    // const char* navi_thread_name = "Navigator";
-    // const char* prognostic_thread_name = "Prognostic";
-    const char* cli_thread_name = "cli";
-    const char* cntr_thread_name = "cntr";
-    const char* ekf_thread_name = "ekf";
-    const char* apf_thread_name = "apf";
-    const char* mavlink_RX_thread_name = "Mav_reciver";
-    const char* mavlink_TX_thread_name = "Mav_sender";
-
-    Thread Sensor(osPriorityNormal,4096,nullptr,sens_thread_name);
-    Thread PWMPort(osPriorityNormal,2048,nullptr,PWMport_thread_name);
-    // Thread Navigator(osPriorityNormal,4096,nullptr,navi_thread_name);
-    // Thread Prognostic(osPriorityNormal,8092,nullptr,prognostic_thread_name);
-    Thread CommandLineInterface(osPriorityNormal,2048,nullptr,cli_thread_name);
-    Thread Controller(osPriorityNormal,4096,nullptr,cntr_thread_name);
-    Thread APF(osPriorityNormal,4096,nullptr,apf_thread_name);
-    Thread EKF(osPriorityNormal,4096,nullptr,ekf_thread_name);
-    Thread mavlink_RX(osPriorityNormal,2048,nullptr,mavlink_RX_thread_name);
-    Thread mavlink_TX(osPriorityNormal,2048,nullptr,mavlink_TX_thread_name);
-    
-    #if SD_MOUNTED
-    Thread SD_log(osPriorityNormal,2048,nullptr,"SD-log");
-    #endif
-
-    printf("\033[2J\033[1;1H"); // clear screen
-
-    // main_commander->changeState(SYSTEM_WAKE_UP);
-
-    #if PIL_MODE // Start UDP communtication only if in PIL mode!
-    UDPIO_PIL.start(UDPPIL);
-    #endif
-
-    print_lock.lock();
-    printf("\n ====== Firmware is starting... ====== \n");
-
-    #if SD_MOUNTED
-    file_sys_init();
-    #endif
-    
-    printf("Spawning threads...\n");
-    print_lock.unlock();
-    
-    // Prognostic.start(prognostic); // unused without battery
-    
-    // Navigator.start(navigator); // not used with APF
-   
-    Sensor.start(sensors);
-
-    ThisThread::sleep_for(500ms);
-
-    PWMPort.start(PWMport);
-
-    ThisThread::sleep_for(500ms);
-
-    Controller.start(PI_controller);
-
-    ThisThread::sleep_for(500ms);
-    
-    EKF.start(ekf);
-
-    ThisThread::sleep_for(500ms);
-
-    APF.start(apf);    
-    
-    ThisThread::sleep_for(1s);
-
-    mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
-
-    mavlink_TX.start(callback(mavlink_serial_TX, &mavlink_serial_ch));
-
-    #if SD_MOUNTED
-    SD_log.start(SD_log_loop);
-    #endif
-
-    #if CLI_ACTIVE
-    print_lock.lock();
-    printf("Command line available\n");
-    print_lock.unlock();
-    CommandLineInterface.start(cli); // (start others thread in some functions)
-    #endif
-    
-    if(sbus_init(sbus_tx, sbus_rx) != -1){
-        
-        print_lock.lock();
-        printf("SBUS ok\n");
-        print_lock.unlock();
-        
-    }
-
-    // main_commander->changeState(SYSTEM_READY);
-
-    unsigned int raw_sbus[25], sbus_channels_data[16];
-
-    while(1) {
-        
-        if(sbus_get_data(raw_sbus)){
-            sbus_fill_channels(raw_sbus, sbus_channels_data);
-            sbus_use_channels_data(sbus_channels_data);
-        }
-        
-       ThisThread::sleep_for(1s);
-    } 
-}
-
-*/

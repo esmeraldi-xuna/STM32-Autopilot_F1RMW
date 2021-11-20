@@ -8,9 +8,11 @@
 
 void ekf()
 {
+  /*
   print_lock.lock();
   printf("Start EKF thread ID: %d\n", (int)ThisThread::get_id());
   print_lock.unlock();
+  */
  
   Kernel::Clock::time_point epoch;
   std::chrono::milliseconds step = 200ms;

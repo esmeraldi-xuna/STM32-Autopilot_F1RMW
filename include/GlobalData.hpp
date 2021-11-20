@@ -9,12 +9,13 @@
 
 
 typedef enum {
-    sys_init = 0,
-    sys_startup,
-    sys_fail,
-    sys_safe,
-    sys_run_auto,
-    sys_run_manual
+    SYS_INIT = 0,
+    SYS_STARTUP,
+    SYS_FAIL_MAJOR,
+    SYS_FAIL_MINOR,
+    SYS_SAFE,
+    SYS_RUN_AUTO,
+    SYS_RUN_MANUAL
 }FSM_STATES;
 
 typedef struct t{

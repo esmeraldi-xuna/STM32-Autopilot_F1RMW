@@ -15,26 +15,26 @@ void cli()
     const char* prompt = "user@stm32 >> ";
     __command command;
 
+    /*
     print_lock.lock();
     printf("Commnad line init, thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
 
-    // wait inizialization
-    ThisThread::sleep_for(3s);
-
-    /*
     print_lock.lock();
     printf("\033[2J\033[1;1H"); // clear screen
     printf("New Terminal\n");
     print_lock.unlock();
     */
+
+    // wait inizialization
+    ThisThread::sleep_for(3s);
     
 
     // console ready, start getting input
     while (1)
     {
         // printf("\nSTATE: %d", main_commander->get_main_FMS_state());
-        if(main_commander->get_main_FMS_state() == sys_safe){
+        if(main_commander->get_main_FMS_state() == SYS_SAFE){
             ThisThread::sleep_for(100ms);
             print_lock.lock();
             printf("\n%s",prompt);
@@ -102,12 +102,12 @@ void cli()
                 break;
 
             case cmd_run_man:
-                active_state = sys_run_manual;
+                active_state = SYS_RUN_MANUAL;
                 new_state = 1;
                 break;
 
             case cmd_run_auto:
-                active_state = sys_run_auto;
+                active_state = SYS_RUN_AUTO;
                 new_state = 1;
                 break;
 

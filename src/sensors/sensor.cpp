@@ -49,9 +49,11 @@ bool flag_BMP180_online = false;
 
 void sensors()
 {
+    /*
     print_lock.lock();
     printf("Start sensors thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
+    */
     
     // scan channel if needed to ensure all sensors are detected
     // I2C_scan();
@@ -85,7 +87,7 @@ void sensors()
     }
    
     ////////////////////////////////////// for debug///////////////////////////////////////////////
-   
+/* 
     flag_MPU9250_online = false;
     flag_AK8963_online = false;
     flag_BMP180_online = false;
@@ -93,7 +95,7 @@ void sensors()
 
     flag_AK8963_calibrated = false;
     flag_MPU9250_calibrated = false;
-
+*/
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     // Launch events if all sensors are online
@@ -506,7 +508,7 @@ bool try_get_calibration_values(float* min_ext, float* max_ext){
                 }else{
                     print_lock.lock();
                     printf("Correct reading calibration file\n");
-                    printf("read: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", min_ext[0], min_ext[1], min_ext[2], max_ext[0], max_ext[1], max_ext[2]);
+                    // printf("read: %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\n", min_ext[0], min_ext[1], min_ext[2], max_ext[0], max_ext[1], max_ext[2]);
                     print_lock.unlock();
                 }
                 fclose(f);

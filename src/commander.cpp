@@ -129,7 +129,7 @@ FSM_STATES Commander::get_main_FMS_state(){
         return (FSM_STATES)-1;    
 }
 
-bool Commander::check_mandatory(){
+bool Commander::check_init(){
 
     lock_flags.read_lock();
 

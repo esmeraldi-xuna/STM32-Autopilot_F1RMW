@@ -49,10 +49,11 @@
 
 void PI_controller()
 {
+  /*
   print_lock.lock();
   printf("Start PI_controller thread ID: %d\n", (int)ThisThread::get_id());
   print_lock.unlock();
-  /*
+  
   DigitalOut led(LED3,1);
   uint32_t wdgTime;
   float pitch, roll;
@@ -105,7 +106,7 @@ void PI_controller()
     global_data->write_cntr(PI_contr_U, PI_contr_Y);
 
     // write pwm data only in run_auto state
-    if(main_commander->get_main_FMS_state() == sys_run_auto){
+    if(main_commander->get_main_FMS_state() == SYS_RUN_AUTO){
       struct_pwm_data pwm_out;
 
       // example 

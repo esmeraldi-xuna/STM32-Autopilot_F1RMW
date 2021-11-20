@@ -14,17 +14,18 @@ void GlobalData::display(){
     printf(RED("  SENSORS\n"));
 
     printf("\033[2K"); // clear line
-    printf("Altitude:    %.2f\n", data.sensors.altitude);
+    printf("Altitude:    %.2f\n\n", data.sensors.altitude);
     printf("\033[2K"); // clear line
-    printf("Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n", data.sensors.ax, data.sensors.ay, data.sensors.az);
+    printf("Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.ax, data.sensors.ay, data.sensors.az);
     printf("\033[2K"); // clear line
-    printf("Gyro:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    printf("Gyro:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
     printf("\033[2K"); // clear line
-    printf("Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
+    printf("Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
     printf("\033[2K"); // clear line
     printf("Roll:   %8.2f;    Pitch:   %8.2f;    Yaw:   %8.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
     this->lock_sensor.read_unlock();
 
+/*
     this->lock_cntr.read_lock();
     printf(RED("  PI CONTROLLER\n"));
     printf(" Ctrl_U\tCtrl_Y\n\n");
@@ -39,6 +40,7 @@ void GlobalData::display(){
     printf(RED("  EKF\n"));
     printf(" EKF_U\tEKF_Y\n\n");
     this->lock_ekf.read_unlock();
+*/
 
     this->lock_pwm.read_lock();
     printf(RED("  PWM:\n"));

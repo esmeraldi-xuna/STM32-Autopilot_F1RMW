@@ -32,9 +32,11 @@ Event<void(void)> motorwriteEvent(&queuePWM,MotorWriteHandler);
  */
 void PWMport()
 {
+    /*
     print_lock.lock();
     printf("Start PWM thread ID: %d\n", (int)ThisThread::get_id());
     print_lock.unlock();
+    */
 
     //servo1.calibrate(0.0005,90); // 0.0005 s from center (1.5ms) to max/min. The Servo::calibrate() method accepts as first input a value IN SECONDS.
     
