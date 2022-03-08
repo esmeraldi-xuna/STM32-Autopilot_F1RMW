@@ -60,7 +60,7 @@ Commander* main_commander = new Commander();
 
 // struct for storing all data to be displayed
 GlobalData* global_data = new GlobalData();
-//
+
 //  syncro objs
 Mutex led_lock, print_lock;
 
