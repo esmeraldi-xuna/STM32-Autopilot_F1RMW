@@ -18,27 +18,40 @@ typedef enum {
     SYS_RUN_MANUAL
 }FSM_STATES;
 
+typedef struct a{
+    float x = 0;
+    float y = 0;
+    float z = 0;
+}tuple_t;
+
 typedef struct t{
-    float ax = 0;
+    //Internal sensors K64F, acc-mag
+    tuple_t a;
+    tuple_t m;
+    /* float ax = 0;
     float ay = 0;
     float az = 0;
-    float gx = 0;
-    float gy = 0;
-    float gz = 0;
     float mx = 0;
     float my = 0;
-    float mz = 0;
+    float mz = 0; */
+    //External IMU
+    tuple_t a_ext;
+    tuple_t g_ext;
+/*     float gx = 0;
+    float gy = 0;
+    float gz = 0;
     float pitch = 0;
     float roll = 0;
     float yaw = 0;
-    float altitude = 0; 
+    float altitude = 0;  */
+    // 
+    int32_t posL;
+    int32_t posR;
 }struct_sensors_data;
 
 typedef struct p{
-    int motor1=0;
-    int motor2=0;
-    int motor3=0;
-    int motor4=0;
+    int motorL=0;
+    int motorR=0;
 }struct_pwm_data;
 
 
