@@ -3,17 +3,19 @@
 
 #include "mbed.h"
 #include "GlobalData.hpp"
-
+#include "rtos.h"
 struct flags{
 
     // sensors state flags
     struct sensors_t{
-        bool flag_MPU9250_online = false;
+        bool flag_ADXL345_online = false;
+        bool flag_ADXL345_calibrated = false;
 
-        bool flag_AK8963_online = false;
-        bool flag_AK8963_calibrated = false;
+        bool flag_FXOS8700CQ_online = false;
+        bool flag_FXOS8700CQ_calibrated = false;
 
-        bool flag_BMP180_online = false;
+        bool flag_ITG3200_online = false;
+        //bool flag_ITG3200_calibrated = false;
     } sensor;
 
     // motor state flags
@@ -60,18 +62,20 @@ class Commander
         void force_PWM_disable();
         void force_PWM_enable(); 
 
-        // getter - setter for flags
-        bool get_flag_MPU9250_online();
-        void set_flag_MPU9250_online(bool);
+        // getter - setter for online/calibration flags
+        bool get_flag_ADXL345_online();
+        void set_flag_ADXL345_online(bool);
+        bool get_flag_FXOS8700CQ_online();
+        void set_flag_FXOS8700CQ_online(bool);
+        bool get_flag_ITG3200_online();
+        void set_flag_ITG3200_online(bool);  
 
-        bool get_flag_AK8963_online();
-        void set_flag_AK8963_online(bool);
-
-        bool get_flag_AK8963_calibrated();
-        void set_flag_AK8963_calibrated(bool);
-
-        bool get_flag_BMP180_online();
-        void set_flag_BMP180_online(bool);   
+        bool get_flag_ADXL345_calibrated();
+        void set_flag_ADXL345_calibrated(bool);
+        bool get_flag_FXOS8700CQ_calibrated();
+        void set_flag_FXOS8700CQ_calibrated(bool);
+/*         bool get_flag_ITG3200_calibrated();
+        void set_flag_ITG3200_calibrated(bool); */
 
         bool get_pwm_active();
         void set_pwm_active(bool);

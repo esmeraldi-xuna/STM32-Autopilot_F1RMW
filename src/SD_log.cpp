@@ -7,6 +7,7 @@
 #define FORCE_REFORMAT 0
 
 // define pin for SD (change values on 'mbed_app.json')
+//TO DO: vedi conf.
 SDBlockDevice sd_block(MBED_CONF_SD_SPI_MOSI, MBED_CONF_SD_SPI_MISO, MBED_CONF_SD_SPI_CLK, MBED_CONF_SD_SPI_CS); 
 
 // Filesystem

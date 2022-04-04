@@ -10,35 +10,31 @@
 // not edited
 #include <mbed.h>
 #include "BufferedSerial.h"
-#include "Thread.h"
 
 // edited
-#include "apf.hpp"
 #include "cli.hpp"
 #include "commander.hpp"
-#include "ekf.hpp"
 #include "GlobalData.hpp"
 #include "global_vars.hpp"
-#include "navigator.hpp"
-#include "PI_controller.hpp"
-#include "prognostic.hpp"
-#include "PWM_port.hpp"
 #include "read_write_lock.hpp"
-#include "SBUS.h"
 #include "SD_log.hpp"
 #include "sensors.hpp"
-#include "mavlink_serial.hpp"
+#include "Event.h"
+#include "rtos.h"
+/* #include "apf.hpp"
+#include "ekf.hpp"
+#include "PI_controller.hpp" */
 
+using namespace mbed;
 using namespace events;
 using namespace rtos;
 using namespace ThisThread;
-using namespace mbed;
 
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
     PinName pin_for_TX = D1; 
     PinName pin_for_RX = D0; 
-    int baud_rate = 9600;
+    int baud_rate = 115200;
 
     static BufferedSerial my_serial(pin_for_TX, pin_for_RX, baud_rate);
     return &my_serial;
@@ -80,28 +76,28 @@ int main(){
 
     // variables declaration
 
-    // mavlink communication
-    PinName pin_tx =  PA_9 /* = D1*/, pin_rx = PA_10 /* = D0*/;
+    // TO DO: mavlink communication
+    //PinName pin_tx =  PA_9 /* = D1*/, pin_rx = PA_10 /* = D0*/;
     
-    #if OVERRIDE_CONSOLE // use mavlink over usb_serial
+/*     #if OVERRIDE_CONSOLE // use mavlink over usb_serial
       pin_tx = USBTX;
       pin_rx = USBRX;
-    #endif
+    #endif */
     // open serial channel for mavlink
-    static BufferedSerial mavlink_serial_ch(pin_tx, pin_rx, 9600);
+    //static BufferedSerial mavlink_serial_ch(pin_tx, pin_rx, 9600);
 
-    // SBUS (joystick)
-    PinName sbus_tx = D6, sbus_rx = A5; // TODO: find correct PINs
+    // TO DO: SBUS (joystick)
+    //PinName sbus_tx = D6, sbus_rx = A5; // TODO: find correct PINs
     
     // THREADS
     Thread Sensor               (osPriorityNormal, 4096, nullptr, "sens");
     Thread PWMPort              (osPriorityNormal, 2048, nullptr, "PWM");
     Thread CommandLineInterface (osPriorityNormal, 2048, nullptr, "CLI");
-    Thread Controller           (osPriorityNormal, 2048, nullptr, "control");
+    /* Thread Controller           (osPriorityNormal, 2048, nullptr, "control");
     Thread APF                  (osPriorityNormal, 4096, nullptr, "APF");
     Thread EKF                  (osPriorityNormal, 4096, nullptr, "EKF");
     Thread mavlink_RX           (osPriorityNormal, 4096, nullptr, "MAV_RX");
-    Thread mavlink_TX           (osPriorityNormal, 4096, nullptr, "MAV_TX");
+    Thread mavlink_TX           (osPriorityNormal, 4096, nullptr, "MAV_TX"); */
 
     // Thread Navigator            (osPriorityNormal, 4096, nullptr, "NAV");
     // Thread Prognostic           (osPriorityNormal, 2048, nullptr, "progn");
@@ -129,13 +125,13 @@ int main(){
             case SYS_INIT:{
                 
                 // force PWM disabled untill RUN states
-                main_commander->force_PWM_disable();
+                main_commander->force_PWM_disable(); //ok
 
                 // start CLI thread but show it only in safe state
-                CommandLineInterface.start(cli);
+                CommandLineInterface.start(cli);//parte il thread, ma fa niente finchè va in sys_safe
 
                 // start sensors
-                Sensor.start(sensors);
+                //Sensor.start(sensors);
 
                 // start comm with joystick (TODO: define pin)
                 /*
@@ -149,12 +145,12 @@ int main(){
                 }
                 */
                 // Debug
-                main_commander->set_flag_comm_joystick(true);
+                //main_commander->set_flag_comm_joystick(true);
                 ////////
 
                 // start log
                 #if SD_MOUNTED
-                SD_log.start(SD_log_loop);
+                //SD_log.start(SD_log_loop); no logging for now
                 #endif
 
                 // wait untill all ok
@@ -179,7 +175,7 @@ int main(){
                 print_lock.unlock();
 
                 // start mavlink
-                mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
+                /* mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
                 ThisThread::sleep_for(10ms);
                 mavlink_TX.start(callback(mavlink_serial_TX, &mavlink_serial_ch));
                 ThisThread::sleep_for(10ms);
@@ -190,16 +186,16 @@ int main(){
                 EKF.start(ekf);
                 ThisThread::sleep_for(10ms);
                 APF.start(apf);
-                ThisThread::sleep_for(10ms);
+                ThisThread::sleep_for(10ms); */
 
                 // start PWM
-                PWMPort.start(PWMport);
-                ThisThread::sleep_for(10ms);
+                /* PWMPort.start(PWMport);
+                ThisThread::sleep_for(10ms); */
 
                 // wait untill all ok
-                while(!main_commander->check_startup()){
+                /* while(!main_commander->check_startup()){
                     ThisThread::sleep_for(10ms);
-                }
+                } */
 
                 // pass to next step
                 print_lock.lock();
@@ -216,10 +212,10 @@ int main(){
                 print_lock.unlock();
 
                 // safe state: PWM disabled, CLI active only here
-                main_commander->force_PWM_disable();
+                /* main_commander->force_PWM_disable(); */
 
                 // use CLI or joystick to enter in a run mode
-                unsigned int raw_sbus[25], sbus_channels_data[16];
+/*                 unsigned int raw_sbus[25], sbus_channels_data[16];
 
                 while (new_state == 0){
                     if(sbus_get_data(raw_sbus)){
@@ -237,7 +233,7 @@ int main(){
                         }
                     } 
                 }
-
+ */
                 break;
             }
 
@@ -245,8 +241,8 @@ int main(){
 
                 print_lock.lock();
                 printf("RUN AUTO MODE\n");
-                print_lock.unlock();
-
+                print_lock.unlock(); //TODO:all commented for now!!
+/* 
                 // auto mode: flight controlled by software, (use some joystick command to bypass?)
                 main_commander->force_PWM_enable();
                 
@@ -296,6 +292,7 @@ int main(){
                 active_state = SYS_FAIL_MAJOR;
                 ///////////////////
 
+                break; */
                 break;
             }
 
@@ -304,7 +301,7 @@ int main(){
                 print_lock.lock();
                 printf("RUN MANUAL MODE\n");
                 print_lock.unlock();
-
+/* 
                 // manual mode: flight controlled by user (joystick)
                 main_commander->force_PWM_enable();
                 
@@ -326,8 +323,8 @@ int main(){
                             if(sbus_channels_data[0] == 1000){
                                 active_state = SYS_SAFE;
                             }
-                            // example
-                            pwm_out.motor1 = sbus_channels_data[1];
+                            // example - commented for now
+                            //pwm_out.motor1 = sbus_channels_data[1];
                             
                             // use SBUS messages as PWM commands ??????
                             // write pwm_value here
@@ -355,6 +352,7 @@ int main(){
                 active_state = SYS_FAIL_MAJOR;
                 ///////////////////
 
+                break; */
                 break;
             }
 

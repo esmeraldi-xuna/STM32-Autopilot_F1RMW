@@ -16,10 +16,11 @@ void Commander::set_all_flags_to_zero(){
     flag_armed = false;
 
     // sensors state flags
-    all_flags.sensor.flag_AK8963_online = false;
-    all_flags.sensor.flag_AK8963_calibrated = false;
-    all_flags.sensor.flag_BMP180_online = false;
-    all_flags.sensor.flag_MPU9250_online = false;
+    all_flags.sensor.flag_ADXL345_online = false;
+    all_flags.sensor.flag_ADXL345_calibrated = false;
+    all_flags.sensor.flag_FXOS8700CQ_online = false;
+    all_flags.sensor.flag_FXOS8700CQ_calibrated = false;
+    all_flags.sensor.flag_ITG3200_online = false;
 
     // motor state flags
     all_flags.PWM.active = false;
@@ -76,31 +77,37 @@ bool Commander::arm(){
     }
 
     // check sensors
-    if( all_flags.sensor.flag_MPU9250_online == false){
+    if( all_flags.sensor.flag_ADXL345_online == false){
         can_arm = false;
         print_lock.lock();
-        printf("Arming error: sensor MPU9250 not online\n");
+        printf("Arming error: sensor ADXL345 not online\n");
         print_lock.lock();
     }
 
-    if( all_flags.sensor.flag_BMP180_online == false){
+    if( all_flags.sensor.flag_FXOS8700CQ_online == false){
         can_arm = false;
         print_lock.lock();
-        printf("Arming error: sensor BMP180 not online\n");
+        printf("Arming error: sensor FXOS8700CQ not online\n");
         print_lock.lock();
     }
 
-    if( all_flags.sensor.flag_AK8963_online == false){
+    if( all_flags.sensor.flag_ITG3200_online == false){
         can_arm = false;
         print_lock.lock();
-        printf("Arming error: sensor AK8963 not online\n");
+        printf("Arming error: sensor ITG3200 not online\n");
         print_lock.lock();
     }
 
-    if( all_flags.sensor.flag_AK8963_calibrated == false){
+    if( all_flags.sensor.flag_ADXL345_calibrated == false){
         can_arm = false;
         print_lock.lock();
-        printf("Arming error: sensor AK9863 not calibrated\n");
+        printf("Arming error: sensor ADXL345 not calibrated\n");
+        print_lock.lock();
+    }
+    if( all_flags.sensor.flag_FXOS8700CQ_calibrated == false){
+        can_arm = false;
+        print_lock.lock();
+        printf("Arming error: sensor FXOS8700CQ not calibrated\n");
         print_lock.lock();
     }
 
@@ -136,19 +143,19 @@ bool Commander::check_init(){
     bool all_ok = true;
 
     // check sensors
-    if(!all_flags.sensor.flag_MPU9250_online)
+    if(!all_flags.sensor.flag_ADXL345_online)
+        all_ok = false || true; //TO DO 
+
+    if(!all_flags.sensor.flag_FXOS8700CQ_online)
         all_ok = false;
 
-    if(!all_flags.sensor.flag_AK8963_online)
-        all_ok = false;
-
-    if(!all_flags.sensor.flag_BMP180_online)
-        all_ok = false;
+    if(!all_flags.sensor.flag_ITG3200_online)
+        all_ok = false || true;
 
     
     // check joystick communication
     if(!all_flags.comm_joystick)
-        all_ok = false;
+        all_ok = false || true;
 
     lock_flags.read_unlock();
 
@@ -268,73 +275,89 @@ bool Commander::show_all_flags(){
 }
 
 // getter - setter for flags
-bool Commander::get_flag_MPU9250_online()
+bool Commander::get_flag_ADXL345_online()
 {
     bool tmp = false;
     lock_flags.read_lock();
-    tmp = all_flags.sensor.flag_MPU9250_online;
+    tmp = all_flags.sensor.flag_ADXL345_online;
     lock_flags.read_unlock();
 
     return tmp;
 }
-void Commander::set_flag_MPU9250_online(bool value_to_set)
+void Commander::set_flag_ADXL345_online(bool value_to_set)
 {
     lock_flags.write_lock();
-    all_flags.sensor.flag_MPU9250_online = value_to_set;
+    all_flags.sensor.flag_ADXL345_online = value_to_set;
     lock_flags.write_unlock();
     return;
 }
-
-bool Commander::get_flag_AK8963_online()
+bool Commander::get_flag_FXOS8700CQ_online()
 {
     bool tmp = false;
     lock_flags.read_lock();
-    tmp = all_flags.sensor.flag_AK8963_online;
+    tmp = all_flags.sensor.flag_FXOS8700CQ_online;
     lock_flags.read_unlock();
 
     return tmp;
 }
-void Commander::set_flag_AK8963_online(bool value_to_set)
+void Commander::set_flag_FXOS8700CQ_online(bool value_to_set)
 {
     lock_flags.write_lock();
-    all_flags.sensor.flag_AK8963_online = value_to_set;
+    all_flags.sensor.flag_FXOS8700CQ_online = value_to_set;
     lock_flags.write_unlock();
     return;
 }
 
-bool Commander::get_flag_AK8963_calibrated()
+bool Commander::get_flag_ITG3200_online()
 {
     bool tmp = false;
     lock_flags.read_lock();
-    tmp = all_flags.sensor.flag_AK8963_calibrated;
+    tmp = all_flags.sensor.flag_ITG3200_online;
     lock_flags.read_unlock();
 
     return tmp;
 }
-void Commander::set_flag_AK8963_calibrated(bool value_to_set)
+void Commander::set_flag_ITG3200_online(bool value_to_set)
 {
     lock_flags.write_lock();
-    all_flags.sensor.flag_AK8963_calibrated = value_to_set;
+    all_flags.sensor.flag_ITG3200_online = value_to_set;
     lock_flags.write_unlock();
     return;
 }
 
-bool Commander::get_flag_BMP180_online()
+bool Commander::get_flag_ADXL345_calibrated()
 {
     bool tmp = false;
     lock_flags.read_lock();
-    tmp = all_flags.sensor.flag_BMP180_online;
+    tmp = all_flags.sensor.flag_ADXL345_calibrated;
     lock_flags.read_unlock();
 
     return tmp;
 }
-void Commander::set_flag_BMP180_online(bool value_to_set)
+void Commander::set_flag_ADXL345_calibrated(bool value_to_set)
 {
     lock_flags.write_lock();
-    all_flags.sensor.flag_BMP180_online = value_to_set;
+    all_flags.sensor.flag_ADXL345_calibrated = value_to_set;
     lock_flags.write_unlock();
     return;
 }
+bool Commander::get_flag_FXOS8700CQ_calibrated()
+{
+    bool tmp = false;
+    lock_flags.read_lock();
+    tmp = all_flags.sensor.flag_FXOS8700CQ_calibrated;
+    lock_flags.read_unlock();
+
+    return tmp;
+}
+void Commander::set_flag_FXOS8700CQ_calibrated(bool value_to_set)
+{
+    lock_flags.write_lock();
+    all_flags.sensor.flag_FXOS8700CQ_calibrated = value_to_set;
+    lock_flags.write_unlock();
+    return;
+}
+
 
 bool Commander::get_pwm_active()
 {

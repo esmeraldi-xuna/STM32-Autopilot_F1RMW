@@ -12,7 +12,7 @@ extern unsigned int new_state;
 void cli()
 {
     char cliBuffer[50];
-    const char* prompt = "user@stm32 >> ";
+    const char* prompt = "user@k64f >> ";
     __command command;
 
     /*
@@ -90,7 +90,8 @@ void cli()
                 break;
 
             case cmd_mag_calib:
-                start_magnetometer_calibration();
+            printf("mag calib\n");
+                //start_magnetometer_calibration();
                 break;
 
             case cmd_arm_req:
@@ -187,11 +188,11 @@ __command string_to_command(char* input){
     return cmd_invalid;
 }
 
-void start_magnetometer_calibration(void){
+/* void start_magnetometer_calibration(void){
     printf("Calibration task\n");
-    mag_calibration();
+    
 }
-
+ */
 void arm_request(void){
     printf("Arming task\n");
     if (main_commander->arm()){

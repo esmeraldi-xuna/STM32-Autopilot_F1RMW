@@ -1,9 +1,9 @@
 #include "mbed.h"
 #include "GlobalData.hpp"
 #include "cli_appereance.hpp"
-#include "PI_contr.h"
+/* #include "PI_contr.h"
 #include "APF_conver.h"
-#include "Kalman_filter_conv.h"
+#include "Kalman_filter_conv.h" */
 #include "read_write_lock.hpp"
 
 void GlobalData::display(){ 
@@ -13,16 +13,21 @@ void GlobalData::display(){
     this->lock_sensor.read_lock();
     printf(RED("  SENSORS\n"));
 
+   /*  printf("\033[2K"); // clear line
+    printf("Altitude:    %.2f\n\n", data.sensors.altitude); */
+
     printf("\033[2K"); // clear line
-    printf("Altitude:    %.2f\n\n", data.sensors.altitude);
+    printf("Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
     printf("\033[2K"); // clear line
-    printf("Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.ax, data.sensors.ay, data.sensors.az);
+    printf("Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
     printf("\033[2K"); // clear line
-    printf("Gyro:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.gx, data.sensors.gy, data.sensors.gz);
+    printf("Acc_ext:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
     printf("\033[2K"); // clear line
-    printf("Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.mx, data.sensors.my, data.sensors.mz);
-    printf("\033[2K"); // clear line
-    printf("Roll:   %8.2f;    Pitch:   %8.2f;    Yaw:   %8.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+    printf("Gyro_ext:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
+    //TODO: posL,posR ? 
+
+    /* printf("\033[2K"); // clear line
+    printf("Roll:   %8.2f;    Pitch:   %8.2f;    Yaw:   %8.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw); */
     this->lock_sensor.read_unlock();
 
 /*
@@ -45,7 +50,7 @@ void GlobalData::display(){
     this->lock_pwm.read_lock();
     printf(RED("  PWM:\n"));
     printf("\033[2K"); // clear line
-    printf("Motor 1:    %d;   Motor 2:    %d;   Motor 3:    %d;   Motor 4:    %d\n\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
+    printf("Motor L:    %d;   Motor R:    %d\n\n", data.pwm.motorL, data.pwm.motorR);
     this->lock_pwm.read_unlock();
 
     printf(GREEN("\n ---------------- end --------------------\n"));
@@ -57,13 +62,14 @@ void GlobalData::display(){
 void GlobalData::write_on_SD(FILE* out_file){
 
     this->lock_sensor.read_lock();
-    fprintf(out_file, "Altitude: %f Acceleration: X:%f Y:%f Z:%f", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
-    fprintf(out_file, "G: X:%f Y:%f Z:%f", data.sensors.gx, data.sensors.gy, data.sensors.gz);
-    fprintf(out_file, "M: X:%f Y:%f Z:%f", data.sensors.mx, data.sensors.my, data.sensors.mz);
-    fprintf(out_file, "Roll:%f Pitch:%f Yaw:%f", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+    fprintf(out_file, "Acceleration: X:%f Y:%f Z:%f", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
+    fprintf(out_file, "M: X:%f Y:%f Z:%f", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
+    fprintf(out_file, "Acceleration_ext: X:%f Y:%f Z:%f", data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
+    fprintf(out_file, "G: X:%f Y:%f Z:%f", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
+    
     this->lock_sensor.read_unlock();
 
-    this->lock_cntr.read_lock();
+/*     this->lock_cntr.read_lock();
     fprintf(out_file, "CNTR: Ctrl_U, Ctrl_Y; ");
     this->lock_cntr.read_unlock();
 
@@ -73,10 +79,10 @@ void GlobalData::write_on_SD(FILE* out_file){
 
     this->lock_ekf.read_lock();
     fprintf(out_file, "EKF: EKF_U, EKF_Y; ");
-    this->lock_ekf.read_unlock();
+    this->lock_ekf.read_unlock(); */
 
     this->lock_pwm.read_lock();
-    fprintf(out_file, "PWM: M1: %d, M2: %d, M3: %d, M4: %d.\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
+    fprintf(out_file, "PWM: M1: %d, M2: %d.\n", data.pwm.motorL, data.pwm.motorR);
     this->lock_pwm.read_unlock();
 
     return;
@@ -85,13 +91,13 @@ void GlobalData::write_on_SD(FILE* out_file){
 void GlobalData::write_on_SD_as_csv(FILE* out_file){
 
     this->lock_sensor.read_lock();
-    fprintf(out_file, "%f,%f,%f,%f,", data.sensors.altitude, data.sensors.ax, data.sensors.ay, data.sensors.az);
-    fprintf(out_file, "%f,%f,%f,", data.sensors.gx, data.sensors.gy, data.sensors.gz);
-    fprintf(out_file, "%f,%f,%f,", data.sensors.mx, data.sensors.my, data.sensors.mz);
-    fprintf(out_file, "%f,%f,%f,", data.sensors.roll, data.sensors.pitch, data.sensors.yaw);
+    fprintf(out_file, "%f,%f,%f,", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
+    fprintf(out_file, "%f,%f,%f,", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
+    fprintf(out_file, "%f,%f,%f,",data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
+    fprintf(out_file, "%f,%f,%f,", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
     this->lock_sensor.read_unlock();
 
-    this->lock_cntr.read_lock();
+ /*    this->lock_cntr.read_lock();
     fprintf(out_file, "Ctrl_U,Ctrl_Y,");
     this->lock_cntr.read_unlock();
 
@@ -102,9 +108,9 @@ void GlobalData::write_on_SD_as_csv(FILE* out_file){
     this->lock_ekf.read_lock();
     fprintf(out_file, "EKF_U,EKF_Y,");
     this->lock_ekf.read_unlock();
-
+ */
     this->lock_pwm.read_lock();
-    fprintf(out_file, "%d,%d,%d,%d\n", data.pwm.motor1, data.pwm.motor2, data.pwm.motor3, data.pwm.motor4);
+    fprintf(out_file, "%d,%d\n", data.pwm.motorL, data.pwm.motorR);
     this->lock_pwm.read_unlock();
 
     return;
@@ -140,7 +146,7 @@ void GlobalData::write_pwm(struct_pwm_data data_in){
     return;
 };
 
-ExtY_Kalman_filter_conv_T GlobalData::read_ekf_Y(){
+/* ExtY_Kalman_filter_conv_T GlobalData::read_ekf_Y(){
     ExtY_Kalman_filter_conv_T tmp;
     this->lock_ekf.read_lock();
     tmp = this->data.ekf.EKF_Y;
@@ -211,4 +217,4 @@ void GlobalData::write_cntr(ExtU_PI_contr_T U, ExtY_PI_contr_T Y){
     this->lock_cntr.write_unlock();
     return;
 };
-
+ */

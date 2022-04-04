@@ -2,9 +2,9 @@
 #define DISPLAY_DATA_H
 
 #include "mbed.h"
-#include "PI_contr.h"
+/* #include "PI_contr.h"
 #include "APF_conver.h"
-#include "Kalman_filter_conv.h"
+#include "Kalman_filter_conv.h" */
 #include "read_write_lock.hpp"
 
 
@@ -45,20 +45,22 @@ typedef struct t{
     float yaw = 0;
     float altitude = 0;  */
     // 
-    int32_t posL;
-    int32_t posR;
+    int32_t posL = 0;
+    int32_t posR = 0;
+    float speedL = 0;
+    float speedR = 0;
 }struct_sensors_data;
 
 typedef struct p{
-    int motorL=0;
-    int motorR=0;
+    int motorL = 0;
+    int motorR = 0;
 }struct_pwm_data;
 
 
 typedef struct data_type{
     struct_sensors_data sensors;
 
-    struct y{
+/*     struct y{
         ExtU_PI_contr_T ctrl_U; 
         ExtY_PI_contr_T ctrl_Y; 
     }controller;
@@ -71,7 +73,7 @@ typedef struct data_type{
     struct e{
         ExtU_Kalman_filter_conv_T EKF_U;
         ExtY_Kalman_filter_conv_T EKF_Y;
-    }ekf;
+    }ekf; */
 
     struct_pwm_data pwm;
 } data_t;
@@ -90,7 +92,7 @@ class GlobalData
     struct_sensors_data read_sensor();
     void write_sensor(struct_sensors_data);
 
-    ExtY_Kalman_filter_conv_T read_ekf_Y();
+    /* ExtY_Kalman_filter_conv_T read_ekf_Y();
     ExtU_Kalman_filter_conv_T read_ekf_U();
     void write_ekf(ExtU_Kalman_filter_conv_T, ExtY_Kalman_filter_conv_T);
 
@@ -101,14 +103,14 @@ class GlobalData
     ExtY_PI_contr_T read_cntr_Y();
     ExtU_PI_contr_T read_cntr_U();
     void write_cntr(ExtU_PI_contr_T, ExtY_PI_contr_T);
-
+ */
     struct_pwm_data read_pwm();
     void write_pwm(struct_pwm_data);
     
     private:
     data_t data;
 
-    Read_Write_Lock lock_sensor, lock_ekf, lock_nav, lock_cntr, lock_pwm;
+    Read_Write_Lock lock_sensor,/* , lock_ekf, lock_nav, lock_cntr, */ lock_pwm;
 };
 
 #endif
