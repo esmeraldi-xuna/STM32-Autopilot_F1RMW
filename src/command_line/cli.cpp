@@ -29,7 +29,7 @@ void cli()
     // wait inizialization
     ThisThread::sleep_for(3s);
     
-
+    
     // console ready, start getting input
     while (1)
     {
@@ -129,13 +129,21 @@ void handle_input(char* output){
     
     char tmp; 
     int i=0;
-
+    int junk = 0x7f;
     // get one char at time, put it on console
     do{
-        tmp=getchar();
-        output[i] = tmp;
-        i++;
-        putchar(tmp);
+       tmp=getchar();
+        if(tmp!=junk){//non ho schiacciato backspace -> salvo e stamp
+            output[i] = tmp;
+            i++;
+            putchar(tmp);
+        }else if(i>0){//ho già messo un carattere
+            i--;
+            putchar(tmp);//lo rimuovo dalla console
+        }
+        else{//non ho messo caratteri -> non devo aggiustare nulla sulla console
+
+        }
     }while(tmp != '\n'); // end when return pressed
 
     // change \n with \0 (string terminator)

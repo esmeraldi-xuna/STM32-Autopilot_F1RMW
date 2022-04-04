@@ -17,13 +17,13 @@ void GlobalData::display(){
     printf("Altitude:    %.2f\n\n", data.sensors.altitude); */
 
     printf("\033[2K"); // clear line
-    printf("Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
+    printf("FXOS8700CQ-Acc:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
     printf("\033[2K"); // clear line
-    printf("Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
+    printf("FXOS8700CQ-Mag:     X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
     printf("\033[2K"); // clear line
-    printf("Acc_ext:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
+    printf("ADXL345-Acc:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
     printf("\033[2K"); // clear line
-    printf("Gyro_ext:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
+    printf("ITG3200-Gyr:    X:    %8.2f;    Y:    %8.2f;    Z:    %8.2f\n\n", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
     //TODO: posL,posR ? 
 
     /* printf("\033[2K"); // clear line
@@ -62,10 +62,10 @@ void GlobalData::display(){
 void GlobalData::write_on_SD(FILE* out_file){
 
     this->lock_sensor.read_lock();
-    fprintf(out_file, "Acceleration: X:%f Y:%f Z:%f", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
-    fprintf(out_file, "M: X:%f Y:%f Z:%f", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
-    fprintf(out_file, "Acceleration_ext: X:%f Y:%f Z:%f", data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
-    fprintf(out_file, "G: X:%f Y:%f Z:%f", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
+    fprintf(out_file, "FXOS8700CQ-Acc: X:%f Y:%f Z:%f", data.sensors.a.x, data.sensors.a.y, data.sensors.a.z);
+    fprintf(out_file, "FXOS8700CQ-Mag: X:%f Y:%f Z:%f", data.sensors.m.x, data.sensors.m.y, data.sensors.m.z);
+    fprintf(out_file, "ADXL345-Acc: X:%f Y:%f Z:%f", data.sensors.a_ext.x, data.sensors.a_ext.y, data.sensors.a_ext.z);
+    fprintf(out_file, "ITG3200-Gyr: X:%f Y:%f Z:%f", data.sensors.g_ext.x, data.sensors.g_ext.y, data.sensors.g_ext.z);
     
     this->lock_sensor.read_unlock();
 

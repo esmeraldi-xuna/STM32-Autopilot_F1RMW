@@ -54,13 +54,17 @@ void sensors()
     */
     
     // scan channel if needed to ensure all sensors are detected
+    accmag.init();
+    ThisThread::sleep_for(500ms);
     I2C_scan();
     //FX
-    accmag.init();
-    if(accmag.get_who_am_i()==(0x1D << 1) ){
+    
+    //if(accmag.get_who_am_i()==0x0D ){
         flag_FXOS8700CQ_online=true;
         main_commander->set_flag_FXOS8700CQ_online(true);
-    }
+        Data v = accmag.get_values();
+        printf("%.2f,%.2f,%.2f\n",v.ax,v.ay,v.az);
+    //}
     ThisThread::sleep_for(500ms);
 
     //adxl+gyro

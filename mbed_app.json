@@ -3,13 +3,7 @@
         "*": {
             "platform.all-stats-enabled": true,
             "platform.minimal-printf-enable-floating-point": true,
-            "platform.minimal-printf-set-floating-point-max-decimals": 6,
-            "target.features_add": ["STORAGE"],
-            "target.components_add": ["SD"],
-            "sd.SPI_MOSI": "D11",
-            "sd.SPI_MISO": "D12",
-            "sd.SPI_CLK": "D13",
-            "sd.SPI_CS": "D10"
+            "platform.minimal-printf-set-floating-point-max-decimals": 6
         }
     }
 }

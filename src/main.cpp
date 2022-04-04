@@ -21,6 +21,9 @@
 #include "sensors.hpp"
 #include "Event.h"
 #include "rtos.h"
+#include "PWM_port.hpp"
+#include "mavlink_comm.h"
+
 /* #include "apf.hpp"
 #include "ekf.hpp"
 #include "PI_controller.hpp" */
@@ -32,15 +35,15 @@ using namespace ThisThread;
 
 #if OVERRIDE_CONSOLE
 FileHandle *mbed::mbed_override_console(int) {
-    PinName pin_for_TX = D1; 
-    PinName pin_for_RX = D0; 
+    PinName pin_for_TX = USBTX; 
+    PinName pin_for_RX = USBRX; 
     int baud_rate = 115200;
 
     static BufferedSerial my_serial(pin_for_TX, pin_for_RX, baud_rate);
     return &my_serial;
 }
 #endif
-
+int cnt = 0;
 #if PIL_MODE
     #include "UDPPIL.hpp"
     /** This spawns the thread responsible for receving/sending simulation data from/to an external PC. It is enables only if 
@@ -67,7 +70,7 @@ FSM_STATES active_state = SYS_INIT;
 unsigned int new_state = 0;
 
 int main(){
-
+    printf("Main\n");
     // program starts here
     
     // allow the commander to access the acite state variable
@@ -95,9 +98,9 @@ int main(){
     Thread CommandLineInterface (osPriorityNormal, 2048, nullptr, "CLI");
     /* Thread Controller           (osPriorityNormal, 2048, nullptr, "control");
     Thread APF                  (osPriorityNormal, 4096, nullptr, "APF");
-    Thread EKF                  (osPriorityNormal, 4096, nullptr, "EKF");
-    Thread mavlink_RX           (osPriorityNormal, 4096, nullptr, "MAV_RX");
-    Thread mavlink_TX           (osPriorityNormal, 4096, nullptr, "MAV_TX"); */
+    Thread EKF                  (osPriorityNormal, 4096, nullptr, "EKF"); */
+    Thread mavl_RX           (osPriorityNormal, 4096, nullptr, "MAV_RX");
+    Thread mavl_TX           (osPriorityNormal, 4096, nullptr, "MAV_TX"); 
 
     // Thread Navigator            (osPriorityNormal, 4096, nullptr, "NAV");
     // Thread Prognostic           (osPriorityNormal, 2048, nullptr, "progn");
@@ -126,12 +129,12 @@ int main(){
                 
                 // force PWM disabled untill RUN states
                 main_commander->force_PWM_disable(); //ok
-
+                
                 // start CLI thread but show it only in safe state
                 CommandLineInterface.start(cli);//parte il thread, ma fa niente finchè va in sys_safe
-
+                
                 // start sensors
-                //Sensor.start(sensors);
+                Sensor.start(sensors);
 
                 // start comm with joystick (TODO: define pin)
                 /*
@@ -150,7 +153,7 @@ int main(){
 
                 // start log
                 #if SD_MOUNTED
-                //SD_log.start(SD_log_loop); no logging for now
+                SD_log.start(SD_log_loop);
                 #endif
 
                 // wait untill all ok
@@ -174,13 +177,19 @@ int main(){
                 printf("System STARTUP...\n");
                 print_lock.unlock();
 
+/*                 eth.set_network(mbedIP, mbedMask, mbedGateway);
+                eth.EthernetInterface::connect(); // Done to avoid methods ambiguity!
+
+                socket.open(&eth);
+                socket.bind(14550); */
                 // start mavlink
-                /* mavlink_RX.start(callback(mavlink_serial_RX, &mavlink_serial_ch));
+/*                 mavl_RX.start(mavlink_RX);
                 ThisThread::sleep_for(10ms);
-                mavlink_TX.start(callback(mavlink_serial_TX, &mavlink_serial_ch));
-                ThisThread::sleep_for(10ms);
+                mavl_TX.start(mavlink_TX);
+                ThisThread::sleep_for(10ms); */
 
                 // start controller
+                /*
                 Controller.start(PI_controller);
                 ThisThread::sleep_for(10ms);
                 EKF.start(ekf);
@@ -189,11 +198,11 @@ int main(){
                 ThisThread::sleep_for(10ms); */
 
                 // start PWM
-                /* PWMPort.start(PWMport);
-                ThisThread::sleep_for(10ms); */
+/*                 PWMPort.start(PWMport);
+                ThisThread::sleep_for(10ms);  */
 
                 // wait untill all ok
-                /* while(!main_commander->check_startup()){
+              /*   while(!main_commander->check_startup()){
                     ThisThread::sleep_for(10ms);
                 } */
 
@@ -206,10 +215,11 @@ int main(){
             }
 
             case SYS_SAFE:{
-
+                if(cnt==0){
                 print_lock.lock();
                 printf("SAFE MODE\n");
-                print_lock.unlock();
+                print_lock.unlock();cnt++;
+                }
 
                 // safe state: PWM disabled, CLI active only here
                 /* main_commander->force_PWM_disable(); */
@@ -298,9 +308,10 @@ int main(){
 
             case SYS_RUN_MANUAL:{
 
-                print_lock.lock();
+               /*  print_lock.lock();
                 printf("RUN MANUAL MODE\n");
-                print_lock.unlock();
+                print_lock.unlock(); */
+                
 /* 
                 // manual mode: flight controlled by user (joystick)
                 main_commander->force_PWM_enable();

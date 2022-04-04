@@ -8,7 +8,7 @@ class Read_Write_Lock {
     public:
         Read_Write_Lock(){};
 
-        void read_lock(){this->lock.unlock();};
+        void read_lock(){this->lock.lock();};
 
         void read_unlock(){this->lock.unlock();};
         
