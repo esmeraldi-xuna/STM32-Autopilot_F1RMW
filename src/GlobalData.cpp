@@ -28,7 +28,7 @@ void GlobalData::display(){
 
     /* printf("\033[2K"); // clear line
     printf("Roll:   %8.2f;    Pitch:   %8.2f;    Yaw:   %8.2f\n\n", data.sensors.roll, data.sensors.pitch, data.sensors.yaw); */
-    this->lock_sensor.read_unlock();
+    
 
 /*
     this->lock_cntr.read_lock();
@@ -46,7 +46,11 @@ void GlobalData::display(){
     printf(" EKF_U\tEKF_Y\n\n");
     this->lock_ekf.read_unlock();
 */
-
+    
+    printf(RED("  Encoders:\n"));
+    printf("\033[2K"); // clear line
+    printf("Motor L:    %d;   Motor R:    %d\n\n", data.sensors.posL, data.sensors.posR);
+    this->lock_sensor.read_unlock();
     this->lock_pwm.read_lock();
     printf(RED("  PWM:\n"));
     printf("\033[2K"); // clear line

@@ -20,6 +20,9 @@
 #include "ADXL345_I2C.h"
 #include "ITG3200.h"
 #include "rtos.h"
+
+#include "ManualSwitch.hpp"
+#include "RotaryEncoder.h"
 #define SENS_FREQ                100ms         // in milliseconds!
 #define CALIBRATION_STEPS_NEEDED  100
 
@@ -31,9 +34,9 @@ ITG3200 gyro_ext(PTE25,PTE24,0x68);
 
 
 CalibrateMagneto magCal; // calibration object for magnetometer
-/* ManualSwitch switchEnc(PTD3);
+ManualSwitch switchEnc(PTD3);
 Encoder encoderL(PTB18, PTB19, true);
-Encoder encoderR(PTC1, PTC8, true); */
+Encoder encoderR(PTC1, PTC8, true);
 DigitalOut ledPin(PTD2);
 
 
@@ -161,7 +164,7 @@ void read_sensors_eventHandler(void)
     all_data.g_ext.x = gyro_ext.getGyroY()/gyro_resol;
     all_data.g_ext.y = -gyro_ext.getGyroX()/gyro_resol;
     all_data.g_ext.z = gyro_ext.getGyroZ()/gyro_resol;
-   /*
+   
 
     val = switchEnc.getState();
     if (val == 1) {ledPin = 1;}
@@ -174,7 +177,7 @@ void read_sensors_eventHandler(void)
 
     all_data.posL = -encoderL.getPosition()*360/(1920);
     all_data.posR = encoderR.getPosition()*360/(1920);
-    
+    /*
     all_data.speedL = encoderL.getSpeed()*60; // rpm
     all_data.speedR = encoderR.getSpeed()*60; */
     global_data->write_sensor(all_data);

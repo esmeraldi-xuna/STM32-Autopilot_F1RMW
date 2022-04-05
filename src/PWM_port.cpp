@@ -16,7 +16,7 @@ float delta_pos = 0.01;
 
 // pin enabled for servomotor
 PwmOut servopwm(PTC3);
-Servo servo1(PTC2);
+Servo servo1(PTC2);// Used for camera
 
 EventQueue queuePWM;
 Event<void(void)> servowriteEvent(&queuePWM,ServoWriteHandler);
