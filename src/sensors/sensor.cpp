@@ -66,7 +66,12 @@ void sensors()
         printf("%.2f,%.2f,%.2f\n",v.ax,v.ay,v.az);
     //}
     ThisThread::sleep_for(500ms);
-
+acc_ext.setPowerControl(0x00);//standbymode
+        acc_ext.setDataFormatControl(0x0B);//Full resolution, +/-16g, 4mg/LSB.
+        acc_ext.setDataRate(ADXL345_3200HZ);//3.2kHz data rate.
+        acc_ext.setPowerControl(0x08); //Measurement mode.
+        flag_ADXL345_online=true;
+        main_commander->set_flag_ADXL345_online(true);
     //adxl+gyro
     /* if(acc_ext.getDeviceID()==0x53){
         flag_ADXL345_online=true;
@@ -134,6 +139,8 @@ void read_sensors_eventHandler(void)
     accel_resol=accel_resol; gyro_resol=gyro_resol; readings[0]=0;
     val = posL = posR = 0;
     val++;
+
+    //TO DO: MODIFICARE SEGNI
     accmag_v = accmag.get_values();
     all_data.a.x = accmag_v.ax;
     all_data.a.y = accmag_v.ay;
@@ -147,14 +154,14 @@ void read_sensors_eventHandler(void)
     all_data.m.y = accmag_v.my/magnorm;
     all_data.m.z = accmag_v.mz/magnorm;
 
-    /* acc_ext.getOutput(&readings[0],&readings[1],&readings[2]);
+    acc_ext.getOutput(readings);
     all_data.a_ext.x = (float)readings[1]/accel_resol;
     all_data.a_ext.y = -(float)readings[0]/accel_resol;
     all_data.a_ext.z = (float)readings[2]/accel_resol;
     all_data.g_ext.x = gyro_ext.getGyroY()/gyro_resol;
     all_data.g_ext.y = -gyro_ext.getGyroX()/gyro_resol;
     all_data.g_ext.z = gyro_ext.getGyroZ()/gyro_resol;
-   
+   /*
 
     val = switchEnc.getState();
     if (val == 1) {ledPin = 1;}
