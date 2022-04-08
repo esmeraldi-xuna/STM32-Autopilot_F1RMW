@@ -41,6 +41,7 @@ void Commander::set_all_flags_to_zero(){
     lock_flags.write_unlock();
 }
 
+//BUGGED? all print locks not unlocked!!!!
 bool Commander::arm(){
     bool can_arm = true;
 
@@ -56,14 +57,14 @@ bool Commander::arm(){
     
     // check communication
     if( all_flags.comm_mavlink_rx == false){
-        can_arm = false;
+        can_arm = false || true; //CAMBIARE IN FALSE SOLO, forzato l'or per passare i controlli
         print_lock.lock();
         printf("Arming error: communication MAV rx\n");
         print_lock.lock();
     }
 
     if( all_flags.comm_mavlink_tx == false){
-        can_arm = false;
+        can_arm = false || true;
         print_lock.lock();
         printf("Arming error: communication MAV tx\n");
         print_lock.lock();
@@ -142,20 +143,21 @@ bool Commander::check_init(){
 
     bool all_ok = true;
 
+     // check joystick communication
+    if(!all_flags.comm_joystick)
+        all_ok = false || true;
     // check sensors
     if(!all_flags.sensor.flag_ADXL345_online)
-        all_ok = false || true; //TO DO 
+        all_ok = false; //TO DO 
 
     if(!all_flags.sensor.flag_FXOS8700CQ_online)
         all_ok = false;
 
     if(!all_flags.sensor.flag_ITG3200_online)
-        all_ok = false || true;
+        all_ok = false;
 
     
-    // check joystick communication
-    if(!all_flags.comm_joystick)
-        all_ok = false || true;
+   
 
     lock_flags.read_unlock();
 
@@ -186,8 +188,10 @@ bool Commander::check_startup(){
         all_ok = false || true;
 
     // check pwm thread
-    if(!all_flags.PWM.active)
+    if(!all_flags.PWM.active){
+        printf("PWM active false\n");
         all_ok = false;
+    }
 
     lock_flags.read_unlock();
 

@@ -11,17 +11,17 @@ mavlink_wheel_distance_t encoders;
 uint8_t SYS_ID = 1;
 uint8_t COMP_ID = 17;
 EthernetInterface eth;
-SocketAddress sockAddr_out(ltpndIP, 8151);
-SocketAddress sockAddr_in(ltpndIP, 14550);
+SocketAddress sockAddr_out(ltpndIP, 14551);
+SocketAddress sockAddr_in(ltpndIP, 8151);
 UDPSocket socket;
 uint8_t in_data[MAVLINK_MAX_PACKET_LEN], out_buf[MAVLINK_MAX_PACKET_LEN];
 
-mavlink_message_t msgIn, ekf_data_fusedOut, imu_k64_Out, imu_ext_Out, encodersOut, hb;
+mavlink_message_t msgIn, msgOut;
 mavlink_status_t status;
 mavlink_rc_channels_t rc;
 
 void mavlink_RX(void)
-{   
+{   mavlink_message_t ttt;
     socket.set_timeout(0); 
     while (1)
     {
@@ -57,7 +57,7 @@ void mavlink_RX(void)
                         }
                         break;
                     case MAVLINK_MSG_ID_HEARTBEAT:
-                        printf(" Received hb\n");
+                        printf(" Received hb %d\n",msgIn.seq);
                         break;
                         /* case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED:
                             mavlink_msg_set_position_target_local_ned_decode(&msgIn, &setpointsTrajectoryPlanner);
@@ -81,8 +81,6 @@ void mavlink_RX(void)
                         //     break;
 
                     default:
-                        printf("\033[4;1H");
-                        printf("Mavlink message not decoded!\n");
                         break;
                     }
                 }
@@ -92,7 +90,7 @@ void mavlink_RX(void)
         {
            
         }
-        ThisThread::sleep_for(2000ms);
+        
     }
 }
 void mavlink_TX(void)
@@ -101,8 +99,8 @@ void mavlink_TX(void)
     while (1)
     {
         struct_sensors_data ss = global_data->read_sensor();
-        mavlink_msg_heartbeat_pack(SYS_ID, COMP_ID, &hb, MAV_TYPE_HELICOPTER, MAV_AUTOPILOT_GENERIC, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
-        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &hb);
+        mavlink_msg_heartbeat_pack(SYS_ID, COMP_ID, &msgOut, MAV_TYPE_HELICOPTER, MAV_AUTOPILOT_GENERIC, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
+        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &msgOut);
         
         if (socket.sendto(sockAddr_out, (const void *)out_buf, MAVLINK_MAX_PACKET_LEN) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
         {
@@ -123,8 +121,9 @@ void mavlink_TX(void)
         // imu_k64.zmag = (int16_t)quat_w;
         imu_k64.zmag = (int16_t)ss.m.z;
         // NB: Codice fw alpha usa mag e gyro di questo primo pacchetto per covarianze, solo zmag come quat
-        mavlink_msg_scaled_imu_encode(SYS_ID, COMP_ID, &imu_k64_Out, &imu_k64);
-        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &imu_k64_Out);
+        mavlink_msg_scaled_imu_pack(SYS_ID,COMP_ID,&msgOut,0,(int16_t)(ss.a.x * 1000),(int16_t)(ss.a.y * 1000),
+        (int16_t)(ss.a.x * 1000),0,0,0,0,0,0,0);
+        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &msgOut);
       
         if (socket.sendto(sockAddr_out, (const void *)out_buf, MAVLINK_MAX_PACKET_LEN) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
         {
@@ -135,7 +134,7 @@ void mavlink_TX(void)
         {
             printf("Int. imu not sent!\n");
         }
-       
+       /* 
         // external imu
         imu_ext.time_boot_ms = 0;
         imu_ext.xacc = (int16_t)(ss.a_ext.x * 1000);
@@ -180,7 +179,7 @@ void mavlink_TX(void)
         {
             printf("Encoder data not sent!\n");
         }
-       
-        ThisThread::sleep_for(5000ms);
+        */
+        ThisThread::sleep_for(1000ms);
     }
 }

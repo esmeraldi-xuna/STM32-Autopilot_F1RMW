@@ -10,9 +10,9 @@ extern unsigned int new_state;
 ////////////////////////////////////
 
 void cli()
-{
+{   
     char cliBuffer[50];
-    const char* prompt = "user@k64f >> ";
+    const char *prompt = "user@k64f >> ";
     __command command;
 
     /*
@@ -28,19 +28,19 @@ void cli()
 
     // wait inizialization
     ThisThread::sleep_for(3s);
-    
-    
+
     // console ready, start getting input
     while (1)
     {
         // printf("\nSTATE: %d", main_commander->get_main_FMS_state());
-        if(main_commander->get_main_FMS_state() == SYS_SAFE){
+        if (main_commander->get_main_FMS_state() == SYS_SAFE)
+        {
             ThisThread::sleep_for(100ms);
-            print_lock.lock();
-            printf("\n%s",prompt);
-            print_lock.unlock();
+           /*  print_lock.lock();
+            printf("\n%s", prompt);
+            print_lock.unlock(); */
             ThisThread::sleep_for(100ms);
-            
+
             // get user input
             handle_input(cliBuffer);
 
@@ -90,8 +90,8 @@ void cli()
                 break;
 
             case cmd_mag_calib:
-            printf("mag calib\n");
-                //start_magnetometer_calibration();
+                printf("mag calib\n");
+                // start_magnetometer_calibration();
                 break;
 
             case cmd_arm_req:
@@ -100,6 +100,12 @@ void cli()
 
             case cmd_reset:
                 reset();
+                break;
+            case cmd_ls:
+                cli_ls();
+                break;
+            case cmd_cat:
+                cli_cat(cliBuffer);
                 break;
 
             case cmd_run_man:
@@ -119,94 +125,123 @@ void cli()
             }
             print_lock.unlock();
         }
-        else{
+        else
+        {
             ThisThread::sleep_for(100ms);
         }
     }
 }
 
-void handle_input(char* output){
-    
-    char tmp; 
-    int i=0;
+void handle_input(char *output)
+{
+
+    char tmp;
+    int i = 0;
     int junk = 0x7f;
     // get one char at time, put it on console
-    do{
-       tmp=getchar();
-        if(tmp!=junk){//non ho schiacciato backspace -> salvo e stamp
+    do
+    {
+        tmp = getchar();
+        if (tmp != junk)
+        { // non ho schiacciato backspace -> salvo e stamp
             output[i] = tmp;
             i++;
             putchar(tmp);
-        }else if(i>0){//ho già messo un carattere
+        }
+        else if (i > 0)
+        { // ho già messo un carattere
             i--;
-            putchar(tmp);//lo rimuovo dalla console
+            putchar(tmp); // lo rimuovo dalla console
         }
-        else{//non ho messo caratteri -> non devo aggiustare nulla sulla console
-
+        else
+        { // non ho messo caratteri -> non devo aggiustare nulla sulla console
         }
-    }while(tmp != '\n'); // end when return pressed
+    } while (tmp != '\n'); // end when return pressed
 
     // change \n with \0 (string terminator)
-    output[i-1]='\0';
+    output[i - 1] = '\0';
 
     return;
 }
 
-__command string_to_command(char* input){
+__command string_to_command(char *input)
+{
 
-    if (strcmp(input, "info")== 0){
+    if (strcmp(input, "info") == 0)
+    {
         return cmd_sys_info;
     }
-    if (strcmp(input, "thread")== 0){
+    if (strcmp(input, "thread") == 0)
+    {
         return cmd_thread_info;
     }
-    if (strcmp(input, "clear")== 0){
+    if (strcmp(input, "clear") == 0)
+    {
         return cmd_clear;
     }
-    if (strcmp(input, "help")== 0){
+    if (strcmp(input, "help") == 0)
+    {
         return cmd_help;
     }
-    if (strcmp(input, "return")== 0 || strcmp(input, "\0") == 0){
+    if (strcmp(input, "return") == 0 || strcmp(input, "\0") == 0)
+    {
         return cmd_return;
     }
-    if (strcmp(input, "top")== 0){
+    if (strcmp(input, "top") == 0)
+    {
         return cmd_top;
     }
-    if (strcmp(input, "reset")== 0){
+    if (strcmp(input, "reset") == 0)
+    {
         return cmd_reset;
     }
-    if (strcmp(input, "display")== 0){
+    if (strcmp(input, "display") == 0)
+    {
         return cmd_display_once;
     }
-    if (strcmp(input, "display_r")== 0){
+    if (strcmp(input, "display_r") == 0)
+    {
         return cmd_display_repeat;
     }
-    if (strcmp(input, "arm") == 0){
+    if (strcmp(input, "arm") == 0)
+    {
         return cmd_arm_req;
     }
-    if (strcmp(input, "calibration") == 0){
+    if (strcmp(input, "calibration") == 0)
+    {
         return cmd_mag_calib;
     }
-    if (strcmp(input, "auto") == 0){
+    if (strcmp(input, "auto") == 0)
+    {
         return cmd_run_auto;
     }
-    if (strcmp(input, "manual") == 0){
+    if (strcmp(input, "manual") == 0)
+    {
         return cmd_run_man;
     }
+    if (strcmp(input, "ls") == 0)
+    {
+        return cmd_ls;
+    }
+    if (strncmp(input, "cat ", 4) == 0 && strlen(input) > 4)
+        return cmd_cat;
     return cmd_invalid;
 }
 
 /* void start_magnetometer_calibration(void){
     printf("Calibration task\n");
-    
+
 }
  */
-void arm_request(void){
+void arm_request(void)
+{
     printf("Arming task\n");
-    if (main_commander->arm()){
+    if (main_commander->arm())
+    {
         printf("Arm ok!!!!");
     }
-    else{
+    else
+    {
         printf("NOT ARMED!!!!");
     }
 }

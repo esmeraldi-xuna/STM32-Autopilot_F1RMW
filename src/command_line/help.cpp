@@ -89,6 +89,22 @@ void help(void)
 
     printf(GREEN("|| "));
     printf("\033[7m");
+    printf("ls");
+    printf("\033[0m\033[15G");
+    printf("List content of SD");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
+    printf("cat <file>");
+    printf("\033[0m\033[15G");
+    printf("Show content of <file>");
+    printf("\033[118G");
+    printf(GREEN("||\n"));
+
+    printf(GREEN("|| "));
+    printf("\033[7m");
     printf("reset");
     printf("\033[0m\033[15G");
     printf("Perform software reset");

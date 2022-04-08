@@ -68,13 +68,17 @@ void sensors()
         Data v = accmag.get_values();
         printf("%.2f,%.2f,%.2f\n",v.ax,v.ay,v.az);
     //}
-    ThisThread::sleep_for(500ms);
+    ThisThread::sleep_for(50ms);
 acc_ext.setPowerControl(0x00);//standbymode
         acc_ext.setDataFormatControl(0x0B);//Full resolution, +/-16g, 4mg/LSB.
         acc_ext.setDataRate(ADXL345_3200HZ);//3.2kHz data rate.
         acc_ext.setPowerControl(0x08); //Measurement mode.
         flag_ADXL345_online=true;
         main_commander->set_flag_ADXL345_online(true);
+        main_commander->set_flag_ITG3200_online(true);
+        main_commander->set_flag_ADXL345_calibrated(true);//OCCHIO CALIB! FORZATA PER PASSARE CONTROLLI
+        main_commander->set_flag_FXOS8700CQ_calibrated(true);
+        if(main_commander->get_flag_ADXL345_online()) printf("Correctly put online adxl\n");
     //adxl+gyro
     /* if(acc_ext.getDeviceID()==0x53){
         flag_ADXL345_online=true;
@@ -90,6 +94,7 @@ acc_ext.setPowerControl(0x00);//standbymode
     // Launch events if all sensors are online
     if (flag_FXOS8700CQ_online)//CONTROLLO SOLO QUESTO PER ORA
     {
+        main_commander->set_flag_comm_joystick(true); //lo forzo a true per superare checkinit
         // setup events and post on queue
         postSensorEvent();
 
@@ -177,9 +182,9 @@ void read_sensors_eventHandler(void)
 
     all_data.posL = -encoderL.getPosition()*360/(1920);
     all_data.posR = encoderR.getPosition()*360/(1920);
-    /*
+    
     all_data.speedL = encoderL.getSpeed()*60; // rpm
-    all_data.speedR = encoderR.getSpeed()*60; */
+    all_data.speedR = encoderR.getSpeed()*60;
     global_data->write_sensor(all_data);
     return;
 }

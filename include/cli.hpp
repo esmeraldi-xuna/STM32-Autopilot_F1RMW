@@ -18,6 +18,9 @@ enum __command
     cmd_reset,
     cmd_invalid,
 
+    cmd_ls,
+    cmd_cat,
+    
     cmd_run_auto,
     cmd_run_man,
 };
@@ -49,5 +52,9 @@ void start_magnetometer_calibration(void);
 void arm_request(void);
 
 void reset(void);
+
+void cli_ls(void);
+
+void cli_cat(char *);
 
 #endif
