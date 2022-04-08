@@ -56,7 +56,7 @@ bool Commander::arm(){
     }
     
     // check communication
-    if( all_flags.comm_mavlink_rx == false){
+   /*  if( all_flags.comm_mavlink_rx == false){
         can_arm = false || true; //CAMBIARE IN FALSE SOLO, forzato l'or per passare i controlli
         print_lock.lock();
         printf("Arming error: communication MAV rx\n");
@@ -68,7 +68,7 @@ bool Commander::arm(){
         print_lock.lock();
         printf("Arming error: communication MAV tx\n");
         print_lock.lock();
-    }
+    } */
 
     if( all_flags.comm_joystick == false){
         can_arm = false;

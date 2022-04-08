@@ -22,7 +22,7 @@ static const char *mbedIP = "192.168.1.10";     // IP
 static const char *mbedMask = "255.255.255.0";  // Mask
 static const char *mbedGateway = "192.168.1.1"; // Gateway
 
-static const char *ltpndIP = "192.168.1.7"; //"169.254.85.139";
+static const char *ltpndIP = "192.168.1.11"; //"169.254.85.139";
 /////////////////////////////////  synch obj   /////////////////////////////////////
 
 extern Mutex led_lock, print_lock;

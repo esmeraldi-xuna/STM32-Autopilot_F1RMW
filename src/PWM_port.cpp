@@ -44,10 +44,10 @@ void PWMport()
 
     main_commander->set_pwm_active(true);
     main_commander->force_PWM_enable();
-    if (main_commander->arm())
+    /* if (main_commander->arm())
     {
         printf("ARMED IN PWM_PORT.CPP\n");
-    }
+    } */
     t.start();
     queuePWM.dispatch_forever(); // Also here the queue has to be started in this thread!!! otherwise doesn't dispatch
 

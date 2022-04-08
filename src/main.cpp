@@ -177,17 +177,17 @@ int main()
             print_lock.lock();
             printf("System STARTUP...\n");
             print_lock.unlock();
-            /*
+            
                             eth.set_network(mbedIP, mbedMask, mbedGateway);
                             eth.EthernetInterface::connect(); // Done to avoid methods ambiguity!
                             socket.open(&eth);
-                            socket.bind(8151);
-                             */
+                            socket.bind(8150);
+                            
             // start mavlink
-            /*     mavl_RX.start(mavlink_RX);
+                mavl_RX.start(mavlink_RX);
                 ThisThread::sleep_for(10ms);
                 mavl_TX.start(mavlink_TX);
-                ThisThread::sleep_for(10ms); */
+                ThisThread::sleep_for(10ms);
 
             // start controller
             /*
@@ -223,9 +223,9 @@ int main()
         case SYS_SAFE:
         {
             
-                print_lock.lock();
+              /*   print_lock.lock();
                 printf("SAFE MODE\n");
-                print_lock.unlock();
+                print_lock.unlock(); */
             
 
             // safe state: PWM disabled, CLI active only here

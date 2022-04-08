@@ -11,8 +11,8 @@ mavlink_wheel_distance_t encoders;
 uint8_t SYS_ID = 1;
 uint8_t COMP_ID = 17;
 EthernetInterface eth;
-SocketAddress sockAddr_out(ltpndIP, 14551);
-SocketAddress sockAddr_in(ltpndIP, 8151);
+SocketAddress sockAddr_out(ltpndIP, 8151);
+SocketAddress sockAddr_in(ltpndIP, 8150);
 UDPSocket socket;
 uint8_t in_data[MAVLINK_MAX_PACKET_LEN], out_buf[MAVLINK_MAX_PACKET_LEN];
 
@@ -31,13 +31,13 @@ void mavlink_RX(void)
             {
                 uint8_t byte = in_data[ii];
                 if (mavlink_parse_char(MAVLINK_COMM_0, byte, &msgIn, &status))
-                {
+                {   printf("Received mav mess %d\n",msgIn.seq);
                     switch (msgIn.msgid)
                     {
-                    case MAVLINK_MSG_ID_RC_CHANNELS:
+                    case MAVLINK_MSG_ID_RC_CHANNELS:{
                         mavlink_msg_rc_channels_decode(&msgIn, &rc);
-                        if (main_commander->get_main_FMS_state() == SYS_RUN_MANUAL)
-                        {
+                        /* if (main_commander->get_main_FMS_state() == SYS_RUN_MANUAL)
+                        { */
                             int signs = 1, signt = 1;
 
                             if (rc.chan3_raw == 1)
@@ -52,13 +52,15 @@ void mavlink_RX(void)
                             struct_pwm_data pwmm;
                             pwmm.motorL = signs * rc.chan1_raw + signt * rc.chan2_raw;
                             pwmm.motorR = signs * rc.chan1_raw - signt * rc.chan2_raw;
-                            global_data->write_pwm(pwmm);
-                            //printf("Running joystick, got new pwm\n");
-                        }
+                            //global_data->write_pwm(pwmm);
+                            printf("Running joystick, got new pwm %d %d\n", pwmm.motorL, pwmm.motorR);
+                        //}
                         break;
-                    case MAVLINK_MSG_ID_HEARTBEAT:
+                    }
+                    case MAVLINK_MSG_ID_HEARTBEAT:{
                         printf(" Received hb %d\n",msgIn.seq);
                         break;
+                    }
                         /* case MAVLINK_MSG_ID_SET_POSITION_TARGET_LOCAL_NED:
                             mavlink_msg_set_position_target_local_ned_decode(&msgIn, &setpointsTrajectoryPlanner);
                             printf("\033[10;1H");
@@ -79,16 +81,14 @@ void mavlink_RX(void)
                         //     // printf("odometry: %f, %f, %f, %f, %f\n", odom.x, odom.y, odom.vx, odom.vy, atan2(2*odom.q[3]*odom.q[2], 1 - 2*pow(odom.q[2],2))*180/PI);
 
                         //     break;
-
-                    default:
-                        break;
-                    }
+ 
+                    
+                    } 
                 }
             }
         }
         else
         {
-           
         }
         
     }
@@ -96,10 +96,12 @@ void mavlink_RX(void)
 void mavlink_TX(void)
 { // printf("qui thread\n");
     // socket.set_timeout(2000);
+    int len;
     while (1)
     {
         struct_sensors_data ss = global_data->read_sensor();
-        mavlink_msg_heartbeat_pack(SYS_ID, COMP_ID, &msgOut, MAV_TYPE_HELICOPTER, MAV_AUTOPILOT_GENERIC, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
+        //HEARBEAT SENDING SUSPENDED
+        /* mavlink_msg_heartbeat_pack(SYS_ID, COMP_ID, &msgOut, MAV_TYPE_HELICOPTER, MAV_AUTOPILOT_GENERIC, MAV_MODE_GUIDED_ARMED, 0, MAV_STATE_ACTIVE);
         mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &msgOut);
         
         if (socket.sendto(sockAddr_out, (const void *)out_buf, MAVLINK_MAX_PACKET_LEN) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
@@ -110,7 +112,7 @@ void mavlink_TX(void)
         else
         {
             printf("Heartbeat not sent!\n");
-        }
+        } */
         imu_k64.time_boot_ms = 0;
         imu_k64.xacc = (int16_t)(ss.a.x * 1000); // occhio segni, son mg
         imu_k64.yacc = (int16_t)(ss.a.y * 1000);
@@ -121,11 +123,11 @@ void mavlink_TX(void)
         // imu_k64.zmag = (int16_t)quat_w;
         imu_k64.zmag = (int16_t)ss.m.z;
         // NB: Codice fw alpha usa mag e gyro di questo primo pacchetto per covarianze, solo zmag come quat
-        mavlink_msg_scaled_imu_pack(SYS_ID,COMP_ID,&msgOut,0,(int16_t)(ss.a.x * 1000),(int16_t)(ss.a.y * 1000),
+        len = mavlink_msg_scaled_imu_pack(SYS_ID,COMP_ID,&msgOut,0,(int16_t)(ss.a.x * 1000),(int16_t)(ss.a.y * 1000),
         (int16_t)(ss.a.x * 1000),0,0,0,0,0,0,0);
         mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &msgOut);
       
-        if (socket.sendto(sockAddr_out, (const void *)out_buf, MAVLINK_MAX_PACKET_LEN) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
+        if (socket.sendto(sockAddr_out, (const void *)out_buf, len) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
         {
             // continue;
             // printf("ekf data sent!\n");
@@ -134,7 +136,7 @@ void mavlink_TX(void)
         {
             printf("Int. imu not sent!\n");
         }
-       /* 
+       
         // external imu
         imu_ext.time_boot_ms = 0;
         imu_ext.xacc = (int16_t)(ss.a_ext.x * 1000);
@@ -150,8 +152,8 @@ void mavlink_TX(void)
         imu_ext.zgyro = (int16_t)(ss.g_ext.z * 1000); //
         // printf("gyr_x: %i, gyr_y: %d , gyr_z: %i acc_x: %i, acc_y: %i , acc_z: %i %i %i %i\n", imu_ext.xgyro, imu_ext.ygyro, imu_ext.zgyro, imu_ext.xacc, imu_ext.yacc, imu_ext.zacc, imu_k64.xacc, imu_k64.yacc, imu_k64.zacc);
 
-        mavlink_msg_scaled_imu2_encode(SYS_ID, COMP_ID, &imu_ext_Out, &imu_ext);
-        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &imu_ext_Out);
+        mavlink_msg_scaled_imu2_pack(SYS_ID,COMP_ID,&msgOut,0,0,0,0,0,0,0,0,0,0,0);
+        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &msgOut);
      
         if (socket.sendto(sockAddr_out, (const void *)out_buf, MAVLINK_MAX_PACKET_LEN) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
         {
@@ -167,8 +169,8 @@ void mavlink_TX(void)
         encoders.distance[0] = ss.posL * 0.02 * 3.14 / 180; // Kalman_filter_conv_U.pos_l*0.02*PI/180;
         encoders.distance[1] = ss.posR * 0.02 * 3.14 / 180;
 
-        mavlink_msg_wheel_distance_encode(SYS_ID, COMP_ID, &encodersOut, &encoders);
-        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &encodersOut);
+        mavlink_msg_wheel_distance_pack(SYS_ID, COMP_ID, &msgOut,0,0,0);
+        mavlink_msg_to_send_buffer((uint8_t *)&out_buf, &msgOut);
      
         if (socket.sendto(sockAddr_out, (const void *)out_buf, MAVLINK_MAX_PACKET_LEN) != NSAPI_ERROR_WOULD_BLOCK) // sending data...
         {
@@ -179,7 +181,7 @@ void mavlink_TX(void)
         {
             printf("Encoder data not sent!\n");
         }
-        */
+       
         ThisThread::sleep_for(1000ms);
     }
 }

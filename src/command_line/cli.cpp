@@ -36,7 +36,7 @@ void cli()
         if (main_commander->get_main_FMS_state() == SYS_SAFE)
         {
             ThisThread::sleep_for(100ms);
-           /*  print_lock.lock();
+            /* print_lock.lock();
             printf("\n%s", prompt);
             print_lock.unlock(); */
             ThisThread::sleep_for(100ms);
