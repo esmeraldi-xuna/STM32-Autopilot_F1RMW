@@ -36,5 +36,4 @@ extern Commander* main_commander;
 
 #include "GlobalData.hpp"
 extern GlobalData* global_data;
-
 #endif

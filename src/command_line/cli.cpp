@@ -36,9 +36,9 @@ void cli()
         if (main_commander->get_main_FMS_state() == SYS_SAFE)
         {
             ThisThread::sleep_for(100ms);
-            /* print_lock.lock();
+            print_lock.lock();
             printf("\n%s", prompt);
-            print_lock.unlock(); */
+            print_lock.unlock();
             ThisThread::sleep_for(100ms);
 
             // get user input
@@ -90,8 +90,7 @@ void cli()
                 break;
 
             case cmd_mag_calib:
-                printf("mag calib\n");
-                // start_magnetometer_calibration();
+                mag_calibration();
                 break;
 
             case cmd_arm_req:
@@ -109,6 +108,7 @@ void cli()
                 break;
 
             case cmd_run_man:
+                
                 active_state = SYS_RUN_MANUAL;
                 new_state = 1;
                 break;

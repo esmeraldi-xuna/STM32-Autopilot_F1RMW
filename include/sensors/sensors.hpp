@@ -23,6 +23,6 @@ int I2C_scan(void);
 
 //bool init_baro();
 
-//void mag_calibration();
+void mag_calibration();
 
 #endif

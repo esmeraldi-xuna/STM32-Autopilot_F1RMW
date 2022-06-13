@@ -23,6 +23,7 @@
 
 #include "ManualSwitch.hpp"
 #include "RotaryEncoder.h"
+#include "SD_log.hpp"
 #define SENS_FREQ                100ms         // in milliseconds!
 #define CALIBRATION_STEPS_NEEDED  100
 
@@ -47,6 +48,8 @@ Event<void(void)> read_sensors_event(&queue, read_sensors_eventHandler);
 bool flag_FXOS8700CQ_online = false, flag_FXOS8700CQ_calibrated = false;
 bool flag_ADXL345_online = false, flag_ADXL345_calibrated = false; 
 bool flag_ITG3200_online = false;
+float minMag[3], maxMag[3]; //for calibration
+
 
 void sensors()
 {
@@ -58,7 +61,13 @@ void sensors()
     
     // scan channel if needed to ensure all sensors are detected
     accmag.init();
-    ThisThread::sleep_for(500ms);
+    //if(!getCalibValues())
+        mag_calibration();
+
+
+
+
+    //ThisThread::sleep_for(5000000ms);
     I2C_scan();
     //FX
     
@@ -161,7 +170,16 @@ void read_sensors_eventHandler(void)
     all_data.m.x = accmag_v.mx/magnorm;
     all_data.m.y = accmag_v.my/magnorm;
     all_data.m.z = accmag_v.mz/magnorm;
+    // pitch = atan2(accmagValues.ax,sqrt(accmagValues.ay*accmagValues.ay + accmagValues.az*accmagValues.az)); // ax, ay in g e non in m/s^2!!!
+    //roll = atan2(-accmagValues.ay,sqrt(accmagValues.ax*accmagValues.ax + accmagValues.az*accmagValues.az));
+    // feedback_control_U.psi_est = atan2(-accmagValues.my*cos(roll) - accmagValues.mz*sin(roll),accmagValues.mx*cos(pitch) \
+    //                             + accmagValues.my*sin(pitch)*sin(roll) - accmagValues.mz*sin(pitch)*cos(roll))*180/3.14;
+    //PI_contr_U.psi_odom = atan2(magValues_filt[1],magValues_filt[0])*180/3.14;
+/*     Kalman_filter_conv_U.psi_mag = atan2(magValues_filt[1],magValues_filt[0]);
+    Kalman_filter_conv_U.ax = accmagValues.ax*9.81;
+    Kalman_filter_conv_U.ay = accmagValues.ay*9.81; */
 
+    
     acc_ext.getOutput(readings);
     all_data.a_ext.x = (float)readings[1]/accel_resol;
     all_data.a_ext.y = -(float)readings[0]/accel_resol;
@@ -217,4 +235,23 @@ int I2C_scan(void){
     print_lock.unlock(); 
 
     return count;
+}
+int measurements_count =0;
+
+void mag_calibration(void){
+    float magValues[3],magValues_filt[3], magnorm;
+    Data accmagValues; 
+    while(measurements_count < CALIBRATION_STEPS_NEEDED){
+        accmagValues = accmag.get_values();
+        magValues[0] = accmagValues.mx;
+        magValues[1] = accmagValues.my;
+        magValues[2] = accmagValues.mz;
+        magCal.run(magValues,magValues_filt);
+        measurements_count++;
+    }
+    printf("Measurement aquired\n");
+    magCal.getExtremes(minMag, maxMag);
+    float magData_in[6] = {minMag[0], minMag[1], minMag[2], maxMag[0], maxMag[1], maxMag[2]};
+    //float magData_in[6] = {-1, 0,1,2,3,4};
+    calibUpdate(magData_in);
 }

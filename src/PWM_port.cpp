@@ -149,9 +149,9 @@ void MotorWriteHandler(void)
         if (main_commander->get_force_pwm_enable() || main_commander->is_armed())
         {
             // printf("In motors\n");
-            leftMotor.Move(0);
-            rightMotor.Move(0);
-            // printf("Time: %d\n",t.read_ms());
+            leftMotor.Move(pwm_output.motorL);
+            rightMotor.Move(pwm_output.motorR);
+            /* // printf("Time: %d\n",t.read_ms());
             if (t.read_ms() > 20000)
             {
                 leftMotor.Move(3000);
@@ -171,7 +171,7 @@ void MotorWriteHandler(void)
             {
                 leftMotor.Move(0);
                 rightMotor.Move(0);
-            }
+            } */
             // ThisThread::sleep_for(50ms);
         }
     }

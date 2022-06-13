@@ -167,7 +167,6 @@ int main()
             printf("INIT OK\n");
             print_lock.unlock();
             active_state = SYS_STARTUP;
-
             break;
         }
 
@@ -177,17 +176,17 @@ int main()
             print_lock.lock();
             printf("System STARTUP...\n");
             print_lock.unlock();
-            
-                            eth.set_network(mbedIP, mbedMask, mbedGateway);
-                            eth.EthernetInterface::connect(); // Done to avoid methods ambiguity!
-                            socket.open(&eth);
-                            socket.bind(8150);
-                            
+
+            eth.set_network(mbedIP, mbedMask, mbedGateway);
+            eth.EthernetInterface::connect(); // Done to avoid methods ambiguity!
+            socket.open(&eth);
+            socket.bind(8150);
+
             // start mavlink
-                mavl_RX.start(mavlink_RX);
-                ThisThread::sleep_for(10ms);
-                mavl_TX.start(mavlink_TX);
-                ThisThread::sleep_for(10ms);
+            mavl_RX.start(mavlink_RX);
+            ThisThread::sleep_for(10ms);
+            mavl_TX.start(mavlink_TX);
+            ThisThread::sleep_for(10ms);
 
             // start controller
             /*
@@ -206,11 +205,12 @@ int main()
             int cntttt = 0;
             printf("Entering in while check_startup\n");
             while (!main_commander->check_startup())
-            {   printf("Checking startup %d\n", cntttt);
+            {
+                printf("Checking startup %d\n", cntttt);
                 ThisThread::sleep_for(10ms);
             }
             print_lock.lock();
- printf("Exiting in while check_startup\n");
+            printf("Exiting in while check_startup\n");
             print_lock.unlock();
             // pass to  next step
             print_lock.lock();
@@ -222,14 +222,13 @@ int main()
 
         case SYS_SAFE:
         {
-            
-              /*   print_lock.lock();
-                printf("SAFE MODE\n");
-                print_lock.unlock(); */
-            
+
+            /*   print_lock.lock();
+              printf("SAFE MODE\n");
+              print_lock.unlock(); */
 
             // safe state: PWM disabled, CLI active only here
-            /* main_commander->force_PWM_disable(); */
+            //main_commander->force_PWM_disable();
 
             // use CLI or joystick to enter in a run mode
             /*                 unsigned int raw_sbus[25], sbus_channels_data[16];
@@ -257,9 +256,9 @@ int main()
         case SYS_RUN_AUTO:
         {
 
-            print_lock.lock();
+            /* print_lock.lock();
             printf("RUN AUTO MODE\n");
-            print_lock.unlock(); // TODO:all commented for now!!
+            print_lock.unlock(); */ // TODO:all commented for now!!
             /*
                             // auto mode: flight controlled by software, (use some joystick command to bypass?)
                             main_commander->force_PWM_enable();
@@ -320,7 +319,7 @@ int main()
             /*  print_lock.lock();
              printf("RUN MANUAL MODE\n");
              print_lock.unlock(); */
-
+            main_commander->force_PWM_enable();
             /*
                             // manual mode: flight controlled by user (joystick)
                             main_commander->force_PWM_enable();

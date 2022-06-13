@@ -4,5 +4,6 @@
 void file_sys_init(void);
 
 void SD_log_loop(void);
-
+void calibUpdate(float *);
+int getCalibValues(void)
 #endif
